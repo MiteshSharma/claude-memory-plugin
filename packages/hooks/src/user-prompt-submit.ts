@@ -1,0 +1,30 @@
+import { ensureWorkerRunning, workerPost } from './shared/worker.js'
+import { readHookInput, getProject } from './shared/stdin.js'
+
+async function main(): Promise<void> {
+  const input = readHookInput()
+  const sessionId = input.session_id
+  const workDir = input.cwd ?? process.cwd()
+
+  if (!sessionId) {
+    process.exit(0)
+  }
+
+  const running = await ensureWorkerRunning()
+  if (!running) {
+    process.exit(0)
+  }
+
+  // UserPromptSubmit sends the user's message in `prompt` field
+  await workerPost('/api/sessions/init', {
+    sessionId,
+    project: getProject(workDir),
+    workDir,
+    userPrompt: input.prompt,
+    platform: 'claude-code',
+  })
+
+  process.exit(0)
+}
+
+main().catch(() => process.exit(0))

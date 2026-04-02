@@ -1,0 +1,11 @@
+node_modules/
+dist/
+plugin/
+*.db
+*.db-wal
+*.db-shm
+.env
+.turbo/
+*.log
+plan/
+.DS_Store

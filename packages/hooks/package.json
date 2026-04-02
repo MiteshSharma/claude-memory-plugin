@@ -1,0 +1,19 @@
+{
+  "name": "@claude-plugin-kit/hooks",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "build": "node build.js",
+    "typecheck": "tsc --noEmit",
+    "dev": "node build.js --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@claude-plugin-kit/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.23.0",
+    "typescript": "^5.5.0"
+  }
+}

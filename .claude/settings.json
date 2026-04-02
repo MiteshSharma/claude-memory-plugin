@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "node ./plugin/scripts/session-start.js",
+        "timeout": 10000
+      },
+      {
+        "command": "node ./plugin/scripts/user-message.js",
+        "timeout": 5000
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "command": "node ./plugin/scripts/user-prompt-submit.js",
+        "timeout": 10000
+      }
+    ],
+    "PostToolUse": [
+      {
+        "command": "node ./plugin/scripts/post-tool-use.js",
+        "timeout": 120000
+      }
+    ],
+    "Stop": [
+      {
+        "command": "node ./plugin/scripts/stop.js",
+        "timeout": 60000
+      }
+    ]
+  }
+}
