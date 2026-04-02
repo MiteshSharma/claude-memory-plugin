@@ -1,6 +1,11 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { ContextQuerySchema, ContextResponseSchema } from '@claude-plugin-kit/shared'
+import { z } from 'zod'
+import {
+  ContextQuerySchema,
+  ContextResponseSchema,
+  TokenEconomicsSchema,
+} from '@claude-plugin-kit/shared'
 import { ContextService } from '../services/ContextService.js'
 
 export async function contextRoutes(app: FastifyInstance): Promise<void> {
@@ -19,7 +24,11 @@ export async function contextRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (req, reply) => {
-      const result = await contextService.getInjectableContext(req.query.project)
+      const result = await contextService.getInjectableContext(
+        req.query.project,
+        req.query.mode,
+        req.query.debug,
+      )
       return reply.code(200).send(result)
     },
   )
@@ -36,7 +45,26 @@ export async function contextRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (req, reply) => {
-      const result = await contextService.getPreview(req.query.project)
+      const result = await contextService.getPreview(req.query.project, req.query.mode)
+      return reply.code(200).send(result)
+    },
+  )
+
+  // GET /api/context/token-economics
+  router.get(
+    '/token-economics',
+    {
+      schema: {
+        tags: ['Context'],
+        summary: 'Get token economics breakdown for a project',
+        querystring: z.object({
+          project: z.string().optional().describe('Project name'),
+        }),
+        response: { 200: TokenEconomicsSchema },
+      },
+    },
+    async (req, reply) => {
+      const result = await contextService.getTokenEconomics(req.query.project)
       return reply.code(200).send(result)
     },
   )

@@ -86,6 +86,19 @@ export class PendingMessageRepository {
       .all()
   }
 
+  resetStuck(sessionId: string): void {
+    const staleThreshold = Date.now() - 60_000
+    this.db
+      .update(pendingMessages)
+      .set({ status: 'pending', claimedAt: null })
+      .where(and(
+        eq(pendingMessages.sessionId, sessionId),
+        eq(pendingMessages.status, 'processing'),
+        lt(pendingMessages.claimedAt, staleThreshold),
+      ))
+      .run()
+  }
+
   getSessionsWithPending(): string[] {
     const rows = this.db
       .selectDistinct({ sessionId: pendingMessages.sessionId })

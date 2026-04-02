@@ -1,5 +1,6 @@
 import { createServer } from './server.js'
 import { initDatabase } from './db/database.js'
+import { SessionManager } from './agent/SessionManager.js'
 import { PORT, DATA_DIR } from './config.js'
 import { mkdir } from 'fs/promises'
 import path from 'path'
@@ -8,7 +9,11 @@ async function main(): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true })
 
   const { db, raw } = initDatabase(path.join(DATA_DIR, 'plugin.db'))
-  const server = await createServer(db)
+
+  const sessionManager = new SessionManager(db)
+  await sessionManager.start()
+
+  const server = await createServer(db, sessionManager)
 
   await server.listen({ port: PORT, host: '127.0.0.1' })
 
@@ -18,6 +23,7 @@ async function main(): Promise<void> {
 
   const shutdown = async (): Promise<void> => {
     server.log.info('shutting down...')
+    sessionManager.stop()
     await server.close()
     raw.close()
     process.exit(0)

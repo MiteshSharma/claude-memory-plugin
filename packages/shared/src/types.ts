@@ -110,6 +110,8 @@ export type SummarizeResponse = z.infer<typeof SummarizeResponseSchema>
 
 export const ContextQuerySchema = z.object({
   project: z.string().optional().describe('Project name to get context for'),
+  mode: z.enum(['minimal', 'standard', 'full']).optional().default('standard').describe('Context mode'),
+  debug: z.coerce.boolean().optional().default(false).describe('Add debug info to output'),
 })
 export type ContextQuery = z.infer<typeof ContextQuerySchema>
 
@@ -120,6 +122,15 @@ export const ContextResponseSchema = z.object({
   sessionCount: z.number().describe('Number of sessions included'),
 })
 export type ContextResponse = z.infer<typeof ContextResponseSchema>
+
+export const TokenEconomicsSchema = z.object({
+  tokensUsed: z.number().describe('Tokens spent by AI agent to generate activities'),
+  readTokens: z.number().describe('Estimated tokens to render context'),
+  savings: z.number().describe('tokensUsed - readTokens'),
+  roi: z.number().describe('tokensUsed / readTokens ratio'),
+  activityCount: z.number().describe('Number of activities included'),
+})
+export type TokenEconomics = z.infer<typeof TokenEconomicsSchema>
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 

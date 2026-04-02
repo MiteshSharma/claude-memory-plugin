@@ -22,6 +22,7 @@ const SessionsQuerySchema = z.object({
 export async function sessionRoutes(app: FastifyInstance): Promise<void> {
   const router = app.withTypeProvider<ZodTypeProvider>()
   const sessionService = new SessionService(app.db)
+  sessionService.setSessionManager(app.sessionManager)
 
   // POST /api/sessions/init
   router.post(

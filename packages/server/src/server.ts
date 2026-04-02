@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
 import type { Db } from './db/database.js'
+import type { SessionManager } from './agent/SessionManager.js'
 import { registerSwagger } from './plugins/swagger.js'
 import { registerRoutes } from './routes/index.js'
 import { LOG_LEVEL, IS_DEV } from './config.js'
@@ -8,10 +9,14 @@ import { LOG_LEVEL, IS_DEV } from './config.js'
 declare module 'fastify' {
   interface FastifyInstance {
     db: Db
+    sessionManager: SessionManager
   }
 }
 
-export async function createServer(db: Db): Promise<FastifyInstance> {
+export async function createServer(
+  db: Db,
+  sessionManager: SessionManager,
+): Promise<FastifyInstance> {
   const app = Fastify({
     logger: IS_DEV
       ? {
@@ -26,8 +31,9 @@ export async function createServer(db: Db): Promise<FastifyInstance> {
 
   await app.register(cors, { origin: true })
 
-  // Expose db to all route handlers via app.db
+  // Expose db and session manager to all route handlers
   app.decorate('db', db)
+  app.decorate('sessionManager', sessionManager)
 
   await registerRoutes(app)
 

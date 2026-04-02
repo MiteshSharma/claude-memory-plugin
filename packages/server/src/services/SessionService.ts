@@ -6,17 +6,32 @@ import type {
 } from '@claude-plugin-kit/shared'
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { PromptRepository } from '../repositories/PromptRepository.js'
+import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
+import { OrphanRecoveryService } from './OrphanRecoveryService.js'
+import type { SessionManager } from '../agent/SessionManager.js'
 
 export class SessionService {
   private readonly sessionRepo: SessionRepository
   private readonly promptRepo: PromptRepository
+  private readonly queueRepo: PendingMessageRepository
+  private readonly orphanRecovery: OrphanRecoveryService
+  private sessionManager: SessionManager | null = null
 
   constructor(db: Db) {
     this.sessionRepo = new SessionRepository(db)
     this.promptRepo = new PromptRepository(db)
+    this.queueRepo = new PendingMessageRepository(db)
+    this.orphanRecovery = new OrphanRecoveryService(db)
+  }
+
+  setSessionManager(manager: SessionManager): void {
+    this.sessionManager = manager
   }
 
   async init(data: SessionInitRequest): Promise<SessionInitResponse> {
+    // Recover orphaned sessions before creating/resuming
+    await this.orphanRecovery.recoverOrphanedSessions()
+
     const existing = this.sessionRepo.findBySessionId(data.sessionId)
 
     if (existing) {
@@ -82,7 +97,13 @@ export class SessionService {
   }
 
   async summarize(sessionId: string): Promise<{ queued: boolean }> {
-    // Phase 1: log and ack — Phase 3 will enqueue to AI agent
+    const session = this.sessionRepo.findBySessionId(sessionId)
+    this.queueRepo.enqueue({
+      sessionDbId: session?.id ?? null,
+      sessionId,
+      messageType: 'summarize',
+    })
+    this.sessionManager?.enqueue(sessionId)
     console.log(`[session] summarize queued session=${sessionId}`)
     return { queued: true }
   }

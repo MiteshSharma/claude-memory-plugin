@@ -12,6 +12,7 @@ import { ActivityService } from '../services/ActivityService.js'
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   const router = app.withTypeProvider<ZodTypeProvider>()
   const activityService = new ActivityService(app.db)
+  activityService.setSessionManager(app.sessionManager)
 
   // POST /api/activities
   router.post(

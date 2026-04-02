@@ -76,6 +76,9 @@ importers:
 
   packages/server:
     dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.52.0
+        version: 0.52.0
       '@claude-plugin-kit/shared':
         specifier: workspace:*
         version: link:../shared
@@ -137,6 +140,10 @@ importers:
         version: 5.9.3
 
 packages:
+
+  '@anthropic-ai/sdk@0.52.0':
+    resolution: {integrity: sha512-d4c+fg+xy9e46c8+YnrrgIQR45CZlAi7PwdzIfDXDM6ACxEZli1/fxhURsq30ZpMZy6LvSkr41jGq5aF5TD7rQ==}
+    hasBin: true
 
   '@drizzle-team/brocli@0.10.2':
     resolution: {integrity: sha512-z33Il7l5dKjUgGULTqBsQBQwckHh5AbIuxhdsIxDDiZAzBOrZO6q9ogcWC65kU382AfynTfgNumVcNIjuIua6w==}
@@ -2038,6 +2045,8 @@ packages:
     resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
 
 snapshots:
+
+  '@anthropic-ai/sdk@0.52.0': {}
 
   '@drizzle-team/brocli@0.10.2': {}
 

@@ -1,4 +1,4 @@
-import { eq, desc, sql, count } from 'drizzle-orm'
+import { eq, and, lt, or, isNull, desc, sql, count } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
 import { sessions, type SessionRow } from '../db/schema/index.js'
 
@@ -100,6 +100,21 @@ export class SessionRepository {
       .set({ memorySessionId })
       .where(eq(sessions.id, id))
       .run()
+  }
+
+  findOrphaned(thresholdMs: number): SessionRow[] {
+    const cutoff = Date.now() - thresholdMs
+    return this.db
+      .select()
+      .from(sessions)
+      .where(and(
+        eq(sessions.status, 'active'),
+        or(
+          lt(sessions.lastActivityAt, cutoff),
+          isNull(sessions.lastActivityAt),
+        ),
+      ))
+      .all()
   }
 
   touchLastActivity(id: number): void {

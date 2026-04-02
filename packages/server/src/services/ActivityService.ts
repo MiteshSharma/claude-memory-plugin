@@ -6,12 +6,24 @@ import type {
   SearchResponse,
 } from '@claude-plugin-kit/shared'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
+import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
+import { SessionRepository } from '../repositories/SessionRepository.js'
+import type { SessionManager } from '../agent/SessionManager.js'
 
 export class ActivityService {
   private readonly activityRepo: ActivityRepository
+  private readonly queueRepo: PendingMessageRepository
+  private readonly sessionRepo: SessionRepository
+  private sessionManager: SessionManager | null = null
 
   constructor(db: Db) {
     this.activityRepo = new ActivityRepository(db)
+    this.queueRepo = new PendingMessageRepository(db)
+    this.sessionRepo = new SessionRepository(db)
+  }
+
+  setSessionManager(manager: SessionManager): void {
+    this.sessionManager = manager
   }
 
   async store(data: ActivityRequest): Promise<ActivityResponse> {
@@ -26,18 +38,34 @@ export class ActivityService {
     console.log(`  tool_output : ${outputPreview}`)
     console.log(`══════════════════════════════════════════\n`)
 
-    // Phase 1: store raw event — Phase 3 will enqueue to AI agent for compression
-    const messageId = this.activityRepo.storeRawEvent({
+    // Store raw event (Phase 1 intake buffer)
+    this.activityRepo.storeRawEvent({
       sessionId: data.sessionId,
       eventType: data.toolName,
       payload: JSON.stringify({ input: data.toolInput, response: data.toolResponse }),
     })
 
-    return { queued: true, messageId }
+    // Enqueue for AI processing
+    const session = this.sessionRepo.findBySessionId(data.sessionId)
+    const message = this.queueRepo.enqueue({
+      sessionDbId: session?.id ?? null,
+      sessionId: data.sessionId,
+      messageType: 'tool_use',
+      toolName: data.toolName,
+      toolInput: JSON.stringify(data.toolInput ?? {}),
+      toolResponse: JSON.stringify(data.toolResponse ?? {}),
+      workDir: data.workDir,
+      promptNumber: data.promptNumber,
+    })
+
+    // Notify the session processor
+    this.sessionManager?.enqueue(data.sessionId)
+
+    return { queued: true, messageId: message.id }
   }
 
   async search(_query: SearchQuery): Promise<SearchResponse> {
-    // Phase 1: return empty — Phase 5 implements full vector search
+    // Phase 5 implements full vector search
     return { results: [], total: 0, query: _query.query }
   }
 }
