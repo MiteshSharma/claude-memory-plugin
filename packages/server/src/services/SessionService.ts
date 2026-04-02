@@ -5,23 +5,34 @@ import type {
   SessionCompleteResponse,
 } from '@claude-plugin-kit/shared'
 import { SessionRepository } from '../repositories/SessionRepository.js'
+import { PromptRepository } from '../repositories/PromptRepository.js'
 
 export class SessionService {
   private readonly sessionRepo: SessionRepository
+  private readonly promptRepo: PromptRepository
 
   constructor(db: Db) {
     this.sessionRepo = new SessionRepository(db)
+    this.promptRepo = new PromptRepository(db)
   }
 
   async init(data: SessionInitRequest): Promise<SessionInitResponse> {
     const existing = this.sessionRepo.findBySessionId(data.sessionId)
 
     if (existing) {
-      // Session already tracked — resume it and record this prompt
       if (data.userPrompt) {
-        const promptNumber = this.sessionRepo.countUserPrompts(data.sessionId) + 1
-        this.sessionRepo.saveUserPrompt(data.sessionId, promptNumber, data.userPrompt)
+        const promptNumber = this.promptRepo.countBySession(data.sessionId) + 1
+        this.promptRepo.save({
+          sessionDbId: existing.id,
+          contentSessionId: data.sessionId,
+          project: data.project,
+          promptNumber,
+          promptText: data.userPrompt,
+        })
       }
+
+      this.sessionRepo.incrementPromptCounter(existing.id)
+      this.sessionRepo.touchLastActivity(existing.id)
 
       console.log(`[session] resumed session=${data.sessionId} project=${data.project}`)
       return {
@@ -40,7 +51,13 @@ export class SessionService {
     })
 
     if (data.userPrompt) {
-      this.sessionRepo.saveUserPrompt(data.sessionId, 1, data.userPrompt)
+      this.promptRepo.save({
+        sessionDbId: session.id,
+        contentSessionId: data.sessionId,
+        project: data.project,
+        promptNumber: 1,
+        promptText: data.userPrompt,
+      })
     }
 
     console.log(`\n──────────────────────────────────────────`)
@@ -71,7 +88,6 @@ export class SessionService {
   }
 
   findAll(project?: string, limit = 50) {
-    const repo = this.sessionRepo
-    return repo.findAll(project, limit)
+    return this.sessionRepo.findAll(project, limit)
   }
 }

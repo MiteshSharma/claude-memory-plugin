@@ -96,17 +96,7 @@ export async function sessionRoutes(app: FastifyInstance): Promise<void> {
     },
     async (req, reply) => {
       const rows = sessionService.findAll(req.query.project, req.query.limit)
-      const sessions = rows.map((r) => ({
-        id: r.id,
-        sessionId: r.session_id,
-        project: r.project,
-        workDir: r.work_dir,
-        platform: r.platform,
-        status: r.status,
-        createdAt: r.created_at,
-        completedAt: r.completed_at,
-      }))
-      return reply.code(200).send({ sessions, total: sessions.length })
+      return reply.code(200).send({ sessions: rows, total: rows.length })
     },
   )
 }

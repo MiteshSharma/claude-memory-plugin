@@ -1,15 +1,8 @@
+import { eq, desc, sql, count } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
+import { sessions, type SessionRow } from '../db/schema/index.js'
 
-export interface SessionRow {
-  id: number
-  session_id: string
-  project: string
-  work_dir: string
-  platform: string
-  status: 'active' | 'completed' | 'failed'
-  created_at: string
-  completed_at: string | null
-}
+export type { SessionRow }
 
 export interface CreateSessionData {
   sessionId: string
@@ -21,76 +14,99 @@ export interface CreateSessionData {
 export class SessionRepository {
   constructor(private readonly db: Db) {}
 
-  findBySessionId(sessionId: string): SessionRow | null {
-    return (
-      (this.db
-        .prepare('SELECT * FROM sessions WHERE session_id = ?')
-        .get(sessionId) as SessionRow | undefined) ?? null
-    )
+  findBySessionId(sessionId: string): SessionRow | undefined {
+    return this.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.sessionId, sessionId))
+      .get()
   }
 
   create(data: CreateSessionData): SessionRow {
     return this.db
-      .prepare(
-        `INSERT INTO sessions (session_id, project, work_dir, platform)
-         VALUES (?, ?, ?, ?)
-         RETURNING *`,
-      )
-      .get(data.sessionId, data.project, data.workDir, data.platform) as SessionRow
+      .insert(sessions)
+      .values({
+        sessionId: data.sessionId,
+        project: data.project,
+        workDir: data.workDir,
+        platform: data.platform,
+      })
+      .returning()
+      .get()
   }
 
   markComplete(sessionId: string): void {
     this.db
-      .prepare(
-        `UPDATE sessions
-         SET status = 'completed', completed_at = datetime('now')
-         WHERE session_id = ?`,
-      )
-      .run(sessionId)
+      .update(sessions)
+      .set({
+        status: 'completed',
+        completedAt: new Date().toISOString(),
+      })
+      .where(eq(sessions.sessionId, sessionId))
+      .run()
   }
 
   findAll(project?: string, limit = 50): SessionRow[] {
+    const query = this.db
+      .select()
+      .from(sessions)
+      .orderBy(desc(sessions.createdAt))
+      .limit(limit)
+
     if (project) {
-      return this.db
-        .prepare(
-          'SELECT * FROM sessions WHERE project = ? ORDER BY created_at DESC LIMIT ?',
-        )
-        .all(project, limit) as SessionRow[]
+      return query.where(eq(sessions.project, project)).all()
     }
-    return this.db
-      .prepare('SELECT * FROM sessions ORDER BY created_at DESC LIMIT ?')
-      .all(limit) as SessionRow[]
+    return query.all()
   }
 
   countAll(): number {
-    return (
-      this.db.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }
-    ).c
+    const result = this.db
+      .select({ value: count() })
+      .from(sessions)
+      .get()
+    return result?.value ?? 0
   }
 
   findDistinctProjects(): string[] {
     const rows = this.db
-      .prepare('SELECT DISTINCT project FROM sessions ORDER BY project ASC')
-      .all() as { project: string }[]
+      .selectDistinct({ project: sessions.project })
+      .from(sessions)
+      .orderBy(sessions.project)
+      .all()
     return rows.map((r) => r.project)
   }
 
-  saveUserPrompt(contentSessionId: string, promptNumber: number, promptText: string): void {
-    this.db
-      .prepare(
-        `INSERT INTO user_prompts (content_session_id, prompt_number, prompt_text)
-         VALUES (?, ?, ?)`,
-      )
-      .run(contentSessionId, promptNumber, promptText)
+  findWithStatus(status: 'active' | 'completed' | 'failed'): SessionRow[] {
+    return this.db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.status, status))
+      .all()
   }
 
-  countUserPrompts(contentSessionId: string): number {
-    return (
-      this.db
-        .prepare(
-          'SELECT COUNT(*) as c FROM user_prompts WHERE content_session_id = ?',
-        )
-        .get(contentSessionId) as { c: number }
-    ).c
+  incrementPromptCounter(id: number): number {
+    const result = this.db
+      .update(sessions)
+      .set({ promptCounter: sql`prompt_counter + 1` })
+      .where(eq(sessions.id, id))
+      .returning({ promptCounter: sessions.promptCounter })
+      .get()
+    return result?.promptCounter ?? 0
+  }
+
+  setMemorySessionId(id: number, memorySessionId: string): void {
+    this.db
+      .update(sessions)
+      .set({ memorySessionId })
+      .where(eq(sessions.id, id))
+      .run()
+  }
+
+  touchLastActivity(id: number): void {
+    this.db
+      .update(sessions)
+      .set({ lastActivityAt: Date.now() })
+      .where(eq(sessions.id, id))
+      .run()
   }
 }

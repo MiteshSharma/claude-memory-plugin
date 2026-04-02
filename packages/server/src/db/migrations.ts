@@ -1,4 +1,4 @@
-import type { Db } from './database.js'
+import type { RawDb } from './database.js'
 
 // Each migration is versioned and idempotent.
 // Add new migrations at the END only — never edit existing ones.
@@ -39,9 +39,83 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       CREATE INDEX IF NOT EXISTS idx_user_prompts_session ON user_prompts(content_session_id);
     `,
   },
+  {
+    version: 2,
+    sql: `
+      -- sessions: add Phase 2 columns
+      ALTER TABLE sessions ADD COLUMN memory_session_id TEXT;
+      ALTER TABLE sessions ADD COLUMN prompt_counter INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE sessions ADD COLUMN last_activity_at INTEGER;
+
+      -- activities: AI-processed observations (output of Phase 3 agent)
+      CREATE TABLE IF NOT EXISTS activities (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_db_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
+        session_id     TEXT NOT NULL,
+        project        TEXT NOT NULL,
+        prompt_number  INTEGER,
+        type           TEXT NOT NULL,
+        title          TEXT NOT NULL,
+        subtitle       TEXT,
+        narrative      TEXT NOT NULL,
+        facts          TEXT NOT NULL DEFAULT '[]',
+        concepts       TEXT NOT NULL DEFAULT '[]',
+        files_read     TEXT NOT NULL DEFAULT '[]',
+        files_modified TEXT NOT NULL DEFAULT '[]',
+        tokens_used    INTEGER NOT NULL DEFAULT 0,
+        content_hash   TEXT NOT NULL,
+        created_at     INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS activity_session_idx ON activities(session_id);
+      CREATE INDEX IF NOT EXISTS activity_project_time_idx ON activities(project, created_at);
+      CREATE UNIQUE INDEX IF NOT EXISTS activity_content_hash_idx ON activities(content_hash);
+
+      -- session_summaries: structured session wrap-ups
+      CREATE TABLE IF NOT EXISTS session_summaries (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_db_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
+        session_id     TEXT NOT NULL,
+        project        TEXT NOT NULL,
+        request        TEXT NOT NULL,
+        investigated   TEXT NOT NULL,
+        insights       TEXT NOT NULL,
+        completed      TEXT NOT NULL,
+        pending_work   TEXT NOT NULL DEFAULT '',
+        notes          TEXT NOT NULL DEFAULT '',
+        tokens_used    INTEGER NOT NULL DEFAULT 0,
+        created_at     INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS sum_session_idx ON session_summaries(session_id);
+      CREATE INDEX IF NOT EXISTS sum_project_time_idx ON session_summaries(project, created_at);
+
+      -- user_prompts: add FK + project
+      ALTER TABLE user_prompts ADD COLUMN session_db_id INTEGER REFERENCES sessions(id) ON DELETE CASCADE;
+      ALTER TABLE user_prompts ADD COLUMN project TEXT NOT NULL DEFAULT '';
+
+      -- pending_messages: AI processing queue
+      CREATE TABLE IF NOT EXISTS pending_messages (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        session_db_id  INTEGER REFERENCES sessions(id) ON DELETE CASCADE,
+        session_id     TEXT NOT NULL,
+        message_type   TEXT NOT NULL,
+        tool_name      TEXT,
+        tool_input     TEXT,
+        tool_response  TEXT,
+        work_dir       TEXT,
+        prompt_number  INTEGER,
+        status         TEXT NOT NULL DEFAULT 'pending',
+        retry_count    INTEGER NOT NULL DEFAULT 0,
+        error_message  TEXT,
+        claimed_at     INTEGER,
+        created_at     INTEGER NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS queue_status_idx ON pending_messages(status);
+      CREATE INDEX IF NOT EXISTS queue_session_idx ON pending_messages(session_id);
+    `,
+  },
 ]
 
-export function runMigrations(db: Db): void {
+export function runMigrations(db: RawDb): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS schema_versions (
       version    INTEGER PRIMARY KEY,

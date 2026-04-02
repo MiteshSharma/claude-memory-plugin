@@ -7,7 +7,7 @@ import path from 'path'
 async function main(): Promise<void> {
   await mkdir(DATA_DIR, { recursive: true })
 
-  const db = initDatabase(path.join(DATA_DIR, 'plugin.db'))
+  const { db, raw } = initDatabase(path.join(DATA_DIR, 'plugin.db'))
   const server = await createServer(db)
 
   await server.listen({ port: PORT, host: '127.0.0.1' })
@@ -19,7 +19,7 @@ async function main(): Promise<void> {
   const shutdown = async (): Promise<void> => {
     server.log.info('shutting down...')
     await server.close()
-    db.close()
+    raw.close()
     process.exit(0)
   }
 

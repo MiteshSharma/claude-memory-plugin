@@ -1,5 +1,7 @@
 import type { Db } from '../db/database.js'
 import type { HealthResponse, StatsResponse } from '@claude-plugin-kit/shared'
+import { sql, count } from 'drizzle-orm'
+import { sessions, rawEvents } from '../db/schema/index.js'
 import { VERSION } from '../config.js'
 
 export class HealthService {
@@ -8,7 +10,7 @@ export class HealthService {
   async getHealth(): Promise<HealthResponse> {
     let dbOk = false
     try {
-      this.db.prepare('SELECT 1').get()
+      this.db.run(sql`SELECT 1`)
       dbOk = true
     } catch {
       /* db not ready */
@@ -25,12 +27,16 @@ export class HealthService {
   }
 
   async getStats(): Promise<StatsResponse> {
-    const sessions = (
-      this.db.prepare('SELECT COUNT(*) as c FROM sessions').get() as { c: number }
-    ).c
-    const activities = (
-      this.db.prepare('SELECT COUNT(*) as c FROM raw_events').get() as { c: number }
-    ).c
-    return { sessions, activities, uptime: process.uptime() }
+    const sessionCount = this.db
+      .select({ value: count() })
+      .from(sessions)
+      .get()?.value ?? 0
+
+    const activityCount = this.db
+      .select({ value: count() })
+      .from(rawEvents)
+      .get()?.value ?? 0
+
+    return { sessions: sessionCount, activities: activityCount, uptime: process.uptime() }
   }
 }
