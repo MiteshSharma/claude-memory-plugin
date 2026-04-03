@@ -24,7 +24,7 @@ if (existsSync(mcpPath)) {
 }
 
 mcp.mcpServers ??= {}
-mcp.mcpServers['claude-plugin-kit'] = {
+mcp.mcpServers['memory-updater'] = {
   command: process.execPath,
   args: [mcpScript],
   env: { PLUGIN_PORT: '37799' },

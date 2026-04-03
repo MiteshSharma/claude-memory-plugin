@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "claude-plugin-kit": {
+    "memory-updater": {
       "command": "node",
       "args": [
         "./plugin/scripts/mcp-server.cjs"

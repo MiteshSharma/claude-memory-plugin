@@ -9,7 +9,7 @@ import os from 'os'
 
 const pluginDest = path.join(
   os.homedir(),
-  '.claude/plugins/marketplaces/your-name/claude-plugin-kit',
+  '.claude/plugins/marketplaces/your-name/memory-updater',
 )
 
 if (!existsSync(pluginDest)) {

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# claude-plugin-kit — one-liner installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/your-org/claude-plugin-kit/main/scripts/install.sh | bash
+# memory-updater — one-liner installer
+# Usage: curl -fsSL https://raw.githubusercontent.com/your-org/memory-updater/main/scripts/install.sh | bash
 set -euo pipefail
 
-REPO="https://github.com/your-org/claude-plugin-kit"
-DEST="$HOME/.claude-plugin-kit/source"
+REPO="https://github.com/your-org/memory-updater"
+DEST="$HOME/.memory-updater/source"
 PORT="${PLUGIN_PORT:-37799}"
 
 # ─── Colors ────────────────────────────────────────────────────────────────────
@@ -14,7 +14,7 @@ warn() { echo -e "${YELLOW}  !${NC} $1"; }
 fail() { echo -e "${RED}  ✗${NC} $1"; exit 1; }
 
 echo ""
-echo "  claude-plugin-kit installer"
+echo "  memory-updater installer"
 echo "  ───────────────────────────"
 echo ""
 
@@ -62,7 +62,7 @@ ok "hooks and MCP server registered"
 # ─── 6. Done ──────────────────────────────────────────────────────────────────
 echo ""
 echo "  ┌─────────────────────────────────────────────────────┐"
-echo "  │  claude-plugin-kit installed successfully           │"
+echo "  │  memory-updater installed successfully           │"
 echo "  │                                                     │"
 echo "  │  → Restart Claude Code to activate                  │"
 echo "  │  → Server will auto-start on next session           │"

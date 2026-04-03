@@ -4,7 +4,7 @@ import type {
   ActivityResponse,
   SearchQuery,
   SearchResponse,
-} from '@claude-plugin-kit/shared'
+} from '@memory-updater/shared'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 import { SessionRepository } from '../repositories/SessionRepository.js'

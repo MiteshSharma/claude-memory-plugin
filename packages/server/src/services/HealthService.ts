@@ -1,5 +1,5 @@
 import type { Db } from '../db/database.js'
-import type { HealthResponse, StatsResponse } from '@claude-plugin-kit/shared'
+import type { HealthResponse, StatsResponse } from '@memory-updater/shared'
 import { sql, count } from 'drizzle-orm'
 import { sessions, rawEvents, activities } from '../db/schema/index.js'
 import { VERSION } from '../config.js'

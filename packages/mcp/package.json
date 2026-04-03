@@ -1,5 +1,5 @@
 {
-  "name": "@claude-plugin-kit/mcp",
+  "name": "@memory-updater/mcp",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -9,7 +9,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@claude-plugin-kit/shared": "workspace:*",
+    "@memory-updater/shared": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0",
     "zod": "^3.23.0"
   },

@@ -8,7 +8,7 @@ async function main(): Promise<void> {
 
   const running = await isWorkerRunning()
   if (!running) {
-    process.stderr.write('[claude-plugin-kit] server not running\n')
+    process.stderr.write('[memory-updater] server not running\n')
     process.exit(0)
   }
 
@@ -20,9 +20,9 @@ async function main(): Promise<void> {
   const data = (await res.json()) as { activityCount?: number; sessionCount?: number }
 
   process.stderr.write(
-    `[claude-plugin-kit] project=${project} activities=${data.activityCount ?? 0} sessions=${data.sessionCount ?? 0}\n`,
+    `[memory-updater] project=${project} activities=${data.activityCount ?? 0} sessions=${data.sessionCount ?? 0}\n`,
   )
-  process.stderr.write(`[claude-plugin-kit] viewer → http://127.0.0.1:37799/docs\n`)
+  process.stderr.write(`[memory-updater] viewer → http://127.0.0.1:37799/docs\n`)
 
   process.exit(0)
 }

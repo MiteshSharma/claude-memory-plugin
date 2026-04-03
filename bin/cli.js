@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * claude-plugin-kit CLI
+ * memory-updater CLI
  * Commands: install | uninstall | status | doctor | restart
  */
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
@@ -64,7 +64,7 @@ function hookEntry(script, timeout = 30000) {
 // ─── Commands ─────────────────────────────────────────────────────────────────
 
 function cmdInstall() {
-  console.log('\n  Installing claude-plugin-kit...\n')
+  console.log('\n  Installing memory-updater...\n')
 
   if (!existsSync(SCRIPTS)) {
     fail('plugin/scripts not found — run: pnpm build:plugin')
@@ -84,7 +84,7 @@ function cmdInstall() {
   // Register MCP server in ~/.claude/mcp.json
   const mcp = readJson(MCP_JSON)
   mcp.mcpServers ??= {}
-  mcp.mcpServers['claude-plugin-kit'] = {
+  mcp.mcpServers['memory-updater'] = {
     command: NODE,
     args: [path.join(SCRIPTS, 'mcp-server.cjs')],
     env: { PLUGIN_PORT: PORT },
@@ -96,7 +96,7 @@ function cmdInstall() {
 }
 
 function cmdUninstall() {
-  console.log('\n  Uninstalling claude-plugin-kit...\n')
+  console.log('\n  Uninstalling memory-updater...\n')
 
   // Remove hooks
   const settings = readJson(SETTINGS)
@@ -105,7 +105,7 @@ function cmdUninstall() {
     for (const key of hookKeys) {
       if (!Array.isArray(settings.hooks[key])) continue
       settings.hooks[key] = settings.hooks[key].filter(
-        (h) => !String(h.command ?? '').includes('claude-plugin-kit')
+        (h) => !String(h.command ?? '').includes('memory-updater')
           && !String(h.command ?? '').includes(SCRIPTS)
       )
       if (settings.hooks[key].length === 0) delete settings.hooks[key]
@@ -116,8 +116,8 @@ function cmdUninstall() {
 
   // Remove MCP entry
   const mcp = readJson(MCP_JSON)
-  if (mcp.mcpServers?.['claude-plugin-kit']) {
-    delete mcp.mcpServers['claude-plugin-kit']
+  if (mcp.mcpServers?.['memory-updater']) {
+    delete mcp.mcpServers['memory-updater']
     writeJson(MCP_JSON, mcp)
     ok('MCP server removed from mcp.json')
   }
@@ -134,7 +134,7 @@ function cmdUninstall() {
 }
 
 async function cmdStatus() {
-  console.log('\n  claude-plugin-kit status\n')
+  console.log('\n  memory-updater status\n')
 
   // Server
   const running = await isServerRunning()
@@ -154,19 +154,19 @@ async function cmdStatus() {
   const hooksInstalled = settings.hooks?.SessionStart?.some(
     (h) => String(h.command ?? '').includes(SCRIPTS)
   )
-  hooksInstalled ? ok('hooks registered') : fail('hooks not registered — run: claude-plugin-kit install')
+  hooksInstalled ? ok('hooks registered') : fail('hooks not registered — run: memory-updater install')
 
   // MCP
   const mcp = readJson(MCP_JSON)
-  mcp.mcpServers?.['claude-plugin-kit']
+  mcp.mcpServers?.['memory-updater']
     ? ok('MCP server registered')
-    : fail('MCP server not registered — run: claude-plugin-kit install')
+    : fail('MCP server not registered — run: memory-updater install')
 
   console.log()
 }
 
 async function cmdDoctor() {
-  console.log('\n  claude-plugin-kit doctor\n')
+  console.log('\n  memory-updater doctor\n')
 
   // Node version
   const nodeVer = process.versions.node
@@ -198,14 +198,14 @@ async function cmdDoctor() {
   const expectedEvents = ['SessionStart', 'UserPromptSubmit', 'PostToolUse', 'Stop']
   for (const ev of expectedEvents) {
     const entries = hooks[ev] ?? []
-    const found = entries.some((h) => String(h.command ?? '').includes('claude-plugin-kit')
+    const found = entries.some((h) => String(h.command ?? '').includes('memory-updater')
       || String(h.command ?? '').includes(SCRIPTS))
     found ? ok(`hook: ${ev}`) : fail(`hook missing: ${ev}`)
   }
 
   // MCP
   const mcp = readJson(MCP_JSON)
-  mcp.mcpServers?.['claude-plugin-kit']
+  mcp.mcpServers?.['memory-updater']
     ? ok('MCP server registered')
     : fail('MCP server not registered')
 
@@ -231,7 +231,7 @@ async function cmdRestart() {
 const [,, cmd, ...args] = process.argv
 
 const pkg = readJson(path.join(PKG_ROOT, 'package.json'))
-console.log(`\x1b[1m  claude-plugin-kit\x1b[0m v${pkg.version ?? ''}`)
+console.log(`\x1b[1m  memory-updater\x1b[0m v${pkg.version ?? ''}`)
 
 switch (cmd) {
   case 'install':   cmdInstall();         break
@@ -241,7 +241,7 @@ switch (cmd) {
   case 'restart':   await cmdRestart();   break
   default:
     console.log(`
-  Usage: claude-plugin-kit <command>
+  Usage: memory-updater <command>
 
   Commands:
     install    Register hooks and MCP server in ~/.claude/

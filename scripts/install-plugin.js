@@ -11,10 +11,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 const pluginDest = path.join(
   os.homedir(),
-  '.claude/plugins/marketplaces/your-name/claude-plugin-kit',
+  '.claude/plugins/marketplaces/your-name/memory-updater',
 )
 
-console.log('[install] installing claude-plugin-kit...')
+console.log('[install] installing memory-updater...')
 console.log(`[install] destination: ${pluginDest}`)
 
 mkdirSync(pluginDest, { recursive: true })

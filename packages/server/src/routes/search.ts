@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { SearchQuerySchema, SearchResponseSchema } from '@claude-plugin-kit/shared'
+import { SearchQuerySchema, SearchResponseSchema } from '@memory-updater/shared'
 import { SearchService } from '../services/SearchService.js'
 
 const TimelineQuerySchema = z.object({

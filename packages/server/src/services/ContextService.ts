@@ -1,5 +1,5 @@
 import type { Db } from '../db/database.js'
-import type { ContextResponse } from '@claude-plugin-kit/shared'
+import type { ContextResponse } from '@memory-updater/shared'
 import { ContextBuilder, type ContextMode } from '../context/ContextBuilder.js'
 
 export interface TokenEconomics {

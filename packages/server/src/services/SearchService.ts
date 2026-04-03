@@ -1,5 +1,5 @@
 import type { Db } from '../db/database.js'
-import type { SearchQuery, SearchResponse } from '@claude-plugin-kit/shared'
+import type { SearchQuery, SearchResponse } from '@memory-updater/shared'
 import { SearchRepository, type SearchResult } from '../repositories/SearchRepository.js'
 import type { ActivityRow } from '../db/schema/index.js'
 

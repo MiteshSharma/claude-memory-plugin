@@ -5,7 +5,7 @@ import { z } from 'zod'
 const WORKER_URL = `http://127.0.0.1:${process.env['PLUGIN_PORT'] ?? '37799'}`
 
 const server = new McpServer({
-  name: 'claude-plugin-kit',
+  name: 'memory-updater',
   version: '0.1.0',
 })
 

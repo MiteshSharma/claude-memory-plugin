@@ -1,4 +1,4 @@
-import { HookInputSchema, type HookInput } from '@claude-plugin-kit/shared'
+import { HookInputSchema, type HookInput } from '@memory-updater/shared'
 import { readFileSync } from 'fs'
 
 export function readHookInput(): HookInput {

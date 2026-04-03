@@ -11,7 +11,7 @@ const LOG_FILE = path.join(DATA_DIR, 'server.log')
 /**
  * Shared structured logger for non-Fastify code (agent, services).
  * Dev: pretty-print to stdout.
- * Prod: JSON to stdout + JSON appended to ~/.claude-plugin-kit/server.log
+ * Prod: JSON to stdout + JSON appended to ~/.memory-updater/server.log
  */
 export const logger = IS_DEV
   ? pino({

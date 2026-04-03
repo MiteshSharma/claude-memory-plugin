@@ -51,7 +51,7 @@ Your session
             → Claude walks in already knowing your project
 ```
 
-**Data stays local.** Everything is stored in `~/.claude-plugin-kit/plugin.db` on your machine. Nothing is sent to any external service.
+**Data stays local.** Everything is stored in `~/.memory-updater/plugin.db` on your machine. Nothing is sent to any external service.
 
 ---
 
@@ -59,10 +59,10 @@ Your session
 
 ```bash
 # Install globally
-npm install -g claude-plugin-kit
+npm install -g memory-updater
 
 # Or one-liner
-curl -fsSL https://raw.githubusercontent.com/your-org/claude-plugin-kit/main/scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/your-org/memory-updater/main/scripts/install.sh | bash
 ```
 
 Then restart Claude Code. That's it.
@@ -82,11 +82,11 @@ node bin/cli.js install
 ## CLI
 
 ```bash
-claude-plugin-kit install    # Register hooks + MCP in ~/.claude/
-claude-plugin-kit uninstall  # Remove hooks, MCP, stop server
-claude-plugin-kit status     # Is the server running? Hooks registered?
-claude-plugin-kit doctor     # Full diagnostic
-claude-plugin-kit restart    # Restart the background server
+memory-updater install    # Register hooks + MCP in ~/.claude/
+memory-updater uninstall  # Remove hooks, MCP, stop server
+memory-updater status     # Is the server running? Hooks registered?
+memory-updater doctor     # Full diagnostic
+memory-updater restart    # Restart the background server
 ```
 
 ---
@@ -142,7 +142,7 @@ search("payment", type="sessions") → only session summaries
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PLUGIN_PORT` | `37799` | Server port |
-| `PLUGIN_DATA_DIR` | `~/.claude-plugin-kit` | Where data is stored |
+| `PLUGIN_DATA_DIR` | `~/.memory-updater` | Where data is stored |
 | `PLUGIN_AGENT_MODEL` | `haiku` | Claude model for AI Observer (`haiku` / `sonnet` / `opus`) |
 | `PLUGIN_AGENT_DISABLED` | unset | Set `1` to disable the AI Observer (raw capture only) |
 | `PLUGIN_LOG_LEVEL` | `info` | Log level (`info` / `debug` / `warn` / `error`) |
@@ -179,7 +179,7 @@ plugin/       Built distributable (committed to git — no build step needed)
 
 **Server** runs at `http://127.0.0.1:37799` (localhost only). Swagger docs at `/docs`.
 
-**Database** — SQLite at `~/.claude-plugin-kit/plugin.db` with WAL mode and FTS5 full-text search.
+**Database** — SQLite at `~/.memory-updater/plugin.db` with WAL mode and FTS5 full-text search.
 
 **AI Observer** — async background pipeline: captures tool events → processes via Claude Haiku → stores structured activities → FTS5 indexed.
 

@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { PatternsQuerySchema, PatternsResponseSchema, type PatternsQuery } from '@claude-plugin-kit/shared'
+import { PatternsQuerySchema, PatternsResponseSchema, type PatternsQuery } from '@memory-updater/shared'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
 
 export async function patternRoutes(app: FastifyInstance): Promise<void> {

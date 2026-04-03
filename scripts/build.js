@@ -8,7 +8,7 @@ const root = path.join(__dirname, '..')
 
 const pkg = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf8'))
 
-console.log(`\n[build] Claude Plugin Kit v${pkg.version}\n`)
+console.log(`\n[build] Memory Updater v${pkg.version}\n`)
 
 function run(cmd, label) {
   console.log(`[build] ${label}...`)
@@ -19,20 +19,20 @@ function run(cmd, label) {
 mkdirSync(path.join(root, 'plugin/scripts'), { recursive: true })
 
 // 1. Build shared (others depend on it)
-run('pnpm --filter @claude-plugin-kit/shared build', '1/5 shared')
+run('pnpm --filter @memory-updater/shared build', '1/5 shared')
 
 // 2. Build server → plugin/scripts/server.cjs
-run('pnpm --filter @claude-plugin-kit/server build', '2/5 server')
+run('pnpm --filter @memory-updater/server build', '2/5 server')
 
 // 3. Build hooks → plugin/scripts/*.js
-run('pnpm --filter @claude-plugin-kit/hooks build', '3/5 hooks')
+run('pnpm --filter @memory-updater/hooks build', '3/5 hooks')
 
 // 4. Build MCP → plugin/scripts/mcp-server.cjs
-run('pnpm --filter @claude-plugin-kit/mcp build', '4/5 mcp')
+run('pnpm --filter @memory-updater/mcp build', '4/5 mcp')
 
 // 5. Build UI → plugin/ui/
 mkdirSync(path.join(root, 'plugin/ui'), { recursive: true })
-run('pnpm --filter @claude-plugin-kit/ui build', '5/5 ui')
+run('pnpm --filter @memory-updater/ui build', '5/5 ui')
 
 // Stamp current version into plugin.json
 const pluginJsonPath = path.join(root, 'plugin/.claude-plugin/plugin.json')

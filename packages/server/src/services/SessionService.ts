@@ -6,7 +6,7 @@ import type {
   SessionPromptRequest,
   SessionPromptResponse,
   SessionTouchResponse,
-} from '@claude-plugin-kit/shared'
+} from '@memory-updater/shared'
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { PromptRepository } from '../repositories/PromptRepository.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'

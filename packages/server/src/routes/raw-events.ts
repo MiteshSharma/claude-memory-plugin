@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { RawEventsQuerySchema, RawEventsResponseSchema } from '@claude-plugin-kit/shared'
+import { RawEventsQuerySchema, RawEventsResponseSchema } from '@memory-updater/shared'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
 
 export async function rawEventRoutes(app: FastifyInstance): Promise<void> {

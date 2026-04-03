@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { PromptsListQuerySchema, PromptsListResponseSchema, type PromptsListQuery } from '@claude-plugin-kit/shared'
+import { PromptsListQuerySchema, PromptsListResponseSchema, type PromptsListQuery } from '@memory-updater/shared'
 import { PromptRepository } from '../repositories/PromptRepository.js'
 
 export async function promptRoutes(app: FastifyInstance): Promise<void> {

@@ -4,7 +4,7 @@ import path from 'path'
 export const PORT = parseInt(process.env['PLUGIN_PORT'] ?? '37799')
 export const HOST = process.env['PLUGIN_HOST'] ?? '127.0.0.1'
 export const DATA_DIR =
-  process.env['PLUGIN_DATA_DIR'] ?? path.join(os.homedir(), '.claude-plugin-kit')
+  process.env['PLUGIN_DATA_DIR'] ?? path.join(os.homedir(), '.memory-updater')
 export const LOG_LEVEL = (process.env['PLUGIN_LOG_LEVEL'] ?? 'info') as
   | 'info'
   | 'debug'

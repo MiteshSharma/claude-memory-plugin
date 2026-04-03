@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
 import { z } from 'zod'
-import { HealthResponseSchema, StatsResponseSchema } from '@claude-plugin-kit/shared'
+import { HealthResponseSchema, StatsResponseSchema } from '@memory-updater/shared'
 import { HealthService } from '../services/HealthService.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 import { isReady } from '../lib/state.js'

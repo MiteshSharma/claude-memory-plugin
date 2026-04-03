@@ -1,5 +1,5 @@
 {
-  "name": "@claude-plugin-kit/shared",
+  "name": "@memory-updater/shared",
   "version": "0.1.0",
   "type": "module",
   "main": "./dist/index.js",

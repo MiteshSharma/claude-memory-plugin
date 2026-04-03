@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { ZodTypeProvider } from 'fastify-type-provider-zod'
-import { QueueQuerySchema, QueueResponseSchema } from '@claude-plugin-kit/shared'
+import { QueueQuerySchema, QueueResponseSchema } from '@memory-updater/shared'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 
 export async function queueRoutes(app: FastifyInstance): Promise<void> {

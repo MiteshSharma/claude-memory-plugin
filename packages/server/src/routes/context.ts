@@ -5,7 +5,7 @@ import {
   ContextQuerySchema,
   ContextResponseSchema,
   TokenEconomicsSchema,
-} from '@claude-plugin-kit/shared'
+} from '@memory-updater/shared'
 import { ContextService } from '../services/ContextService.js'
 
 export async function contextRoutes(app: FastifyInstance): Promise<void> {

@@ -6,7 +6,7 @@ import {
   SearchQuerySchema,
   SearchResponseSchema,
   ErrorResponseSchema,
-} from '@claude-plugin-kit/shared'
+} from '@memory-updater/shared'
 import { ActivityService } from '../services/ActivityService.js'
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {

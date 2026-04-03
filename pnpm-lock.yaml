@@ -35,7 +35,7 @@ importers:
 
   packages/hooks:
     dependencies:
-      '@claude-plugin-kit/shared':
+      '@memory-updater/shared':
         specifier: workspace:*
         version: link:../shared
     devDependencies:
@@ -51,7 +51,7 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@claude-plugin-kit/shared':
+      '@memory-updater/shared':
         specifier: workspace:*
         version: link:../shared
       '@modelcontextprotocol/sdk':
@@ -79,9 +79,6 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.52.0
         version: 0.52.0
-      '@claude-plugin-kit/shared':
-        specifier: workspace:*
-        version: link:../shared
       '@fastify/cors':
         specifier: ^11.0.0
         version: 11.2.0
@@ -94,6 +91,9 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^5.2.0
         version: 5.2.5
+      '@memory-updater/shared':
+        specifier: workspace:*
+        version: link:../shared
       better-sqlite3:
         specifier: ^11.0.0
         version: 11.10.0

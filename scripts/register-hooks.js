@@ -51,7 +51,7 @@ if (existsSync(mcpPath)) {
   }
 }
 mcp.mcpServers ??= {}
-mcp.mcpServers['claude-plugin-kit'] = {
+mcp.mcpServers['memory-updater'] = {
   command: nodeExe,
   args: [path.join(scriptsDir, 'mcp-server.cjs')],
   env: { PLUGIN_PORT: '37799' },

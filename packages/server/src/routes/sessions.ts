@@ -15,7 +15,7 @@ import {
   SessionsWithSummaryResponseSchema,
   TimelineResponseSchema,
   ErrorResponseSchema,
-} from '@claude-plugin-kit/shared'
+} from '@memory-updater/shared'
 import { SessionService } from '../services/SessionService.js'
 import { SummaryRepository } from '../repositories/SummaryRepository.js'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
