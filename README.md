@@ -57,7 +57,7 @@ Your session
 
 ## Quick Start
 
-### Manual Install (from source)
+### Install from Source
 
 ```bash
 git clone <repo-url> claude-memory-plugin
@@ -67,6 +67,26 @@ pnpm build:plugin
 node bin/cli.js install
 ```
 
+### Running Server + UI (from root folder)
+
+```bash
+# Development — starts both server and UI with hot reload
+pnpm dev
+# → Server:  http://127.0.0.1:37799      (API + Swagger docs)
+# → UI:      http://127.0.0.1:3100        (Vite dev server, proxies /api)
+
+# Start server only
+pnpm dev:server
+
+# Start UI only
+pnpm dev:ui
+
+# Production — serve built plugin (server + bundled UI)
+pnpm start
+# → http://127.0.0.1:37799  (API + UI served from same port)
+```
+
+---
 
 ## What Gets Injected
 

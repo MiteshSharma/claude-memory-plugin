@@ -15,7 +15,11 @@
     "node": ">=22"
   },
   "scripts": {
-    "dev": "turbo run dev --parallel",
+    "dev": "turbo run dev --filter=@memory-updater/server --filter=@memory-updater/ui --parallel",
+    "dev:all": "turbo run dev --parallel",
+    "dev:server": "turbo run dev --filter=@memory-updater/server",
+    "dev:ui": "turbo run dev --filter=@memory-updater/ui",
+    "start": "node plugin/scripts/server.cjs",
     "build": "turbo run build",
     "build:plugin": "node scripts/build.js",
     "sync": "node scripts/build.js && node scripts/sync.js",
