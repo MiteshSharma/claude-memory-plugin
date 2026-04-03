@@ -29,6 +29,7 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
         { name: 'Activities', description: 'Tool usage activity storage' },
         { name: 'Context', description: 'Memory context injection' },
         { name: 'Projects', description: 'Project management' },
+        { name: 'Search', description: 'Full-text search across activities, summaries, and prompts' },
         { name: 'Admin', description: 'Server administration (localhost only)' },
       ],
       servers: [{ url: 'http://127.0.0.1:37799', description: 'Local server' }],
@@ -41,5 +42,6 @@ export async function registerSwagger(app: FastifyInstance): Promise<void> {
       docExpansion: 'list',
       deepLinking: true,
     },
+    logo: { type: 'text/html', content: '' },
   })
 }

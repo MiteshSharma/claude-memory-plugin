@@ -113,6 +113,70 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       CREATE INDEX IF NOT EXISTS queue_session_idx ON pending_messages(session_id);
     `,
   },
+  {
+    version: 3,
+    sql: `
+      -- FTS5 virtual tables for full-text search
+      CREATE VIRTUAL TABLE IF NOT EXISTS activities_fts USING fts5(
+        title, subtitle, narrative, facts, concepts,
+        content='activities', content_rowid='id'
+      );
+
+      -- Auto-sync triggers for activities_fts
+      CREATE TRIGGER IF NOT EXISTS activities_fts_insert AFTER INSERT ON activities BEGIN
+        INSERT INTO activities_fts(rowid, title, subtitle, narrative, facts, concepts)
+        VALUES (new.id, new.title, new.subtitle, new.narrative, new.facts, new.concepts);
+      END;
+      CREATE TRIGGER IF NOT EXISTS activities_fts_delete AFTER DELETE ON activities BEGIN
+        INSERT INTO activities_fts(activities_fts, rowid, title, subtitle, narrative, facts, concepts)
+        VALUES ('delete', old.id, old.title, old.subtitle, old.narrative, old.facts, old.concepts);
+      END;
+      CREATE TRIGGER IF NOT EXISTS activities_fts_update AFTER UPDATE ON activities BEGIN
+        INSERT INTO activities_fts(activities_fts, rowid, title, subtitle, narrative, facts, concepts)
+        VALUES ('delete', old.id, old.title, old.subtitle, old.narrative, old.facts, old.concepts);
+        INSERT INTO activities_fts(rowid, title, subtitle, narrative, facts, concepts)
+        VALUES (new.id, new.title, new.subtitle, new.narrative, new.facts, new.concepts);
+      END;
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS summaries_fts USING fts5(
+        request, investigated, insights, completed, pending_work, notes,
+        content='session_summaries', content_rowid='id'
+      );
+
+      CREATE TRIGGER IF NOT EXISTS summaries_fts_insert AFTER INSERT ON session_summaries BEGIN
+        INSERT INTO summaries_fts(rowid, request, investigated, insights, completed, pending_work, notes)
+        VALUES (new.id, new.request, new.investigated, new.insights, new.completed, new.pending_work, new.notes);
+      END;
+      CREATE TRIGGER IF NOT EXISTS summaries_fts_delete AFTER DELETE ON session_summaries BEGIN
+        INSERT INTO summaries_fts(summaries_fts, rowid, request, investigated, insights, completed, pending_work, notes)
+        VALUES ('delete', old.id, old.request, old.investigated, old.insights, old.completed, old.pending_work, old.notes);
+      END;
+      CREATE TRIGGER IF NOT EXISTS summaries_fts_update AFTER UPDATE ON session_summaries BEGIN
+        INSERT INTO summaries_fts(summaries_fts, rowid, request, investigated, insights, completed, pending_work, notes)
+        VALUES ('delete', old.id, old.request, old.investigated, old.insights, old.completed, old.pending_work, old.notes);
+        INSERT INTO summaries_fts(rowid, request, investigated, insights, completed, pending_work, notes)
+        VALUES (new.id, new.request, new.investigated, new.insights, new.completed, new.pending_work, new.notes);
+      END;
+
+      CREATE VIRTUAL TABLE IF NOT EXISTS prompts_fts USING fts5(
+        prompt_text,
+        content='user_prompts', content_rowid='id'
+      );
+
+      CREATE TRIGGER IF NOT EXISTS prompts_fts_insert AFTER INSERT ON user_prompts BEGIN
+        INSERT INTO prompts_fts(rowid, prompt_text) VALUES (new.id, new.prompt_text);
+      END;
+      CREATE TRIGGER IF NOT EXISTS prompts_fts_delete AFTER DELETE ON user_prompts BEGIN
+        INSERT INTO prompts_fts(prompts_fts, rowid, prompt_text)
+        VALUES ('delete', old.id, old.prompt_text);
+      END;
+      CREATE TRIGGER IF NOT EXISTS prompts_fts_update AFTER UPDATE ON user_prompts BEGIN
+        INSERT INTO prompts_fts(prompts_fts, rowid, prompt_text)
+        VALUES ('delete', old.id, old.prompt_text);
+        INSERT INTO prompts_fts(rowid, prompt_text) VALUES (new.id, new.prompt_text);
+      END;
+    `,
+  },
 ]
 
 export function runMigrations(db: RawDb): void {

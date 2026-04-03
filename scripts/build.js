@@ -19,16 +19,20 @@ function run(cmd, label) {
 mkdirSync(path.join(root, 'plugin/scripts'), { recursive: true })
 
 // 1. Build shared (others depend on it)
-run('pnpm --filter @claude-plugin-kit/shared build', '1/4 shared')
+run('pnpm --filter @claude-plugin-kit/shared build', '1/5 shared')
 
 // 2. Build server → plugin/scripts/server.cjs
-run('pnpm --filter @claude-plugin-kit/server build', '2/4 server')
+run('pnpm --filter @claude-plugin-kit/server build', '2/5 server')
 
 // 3. Build hooks → plugin/scripts/*.js
-run('pnpm --filter @claude-plugin-kit/hooks build', '3/4 hooks')
+run('pnpm --filter @claude-plugin-kit/hooks build', '3/5 hooks')
 
 // 4. Build MCP → plugin/scripts/mcp-server.cjs
-run('pnpm --filter @claude-plugin-kit/mcp build', '4/4 mcp')
+run('pnpm --filter @claude-plugin-kit/mcp build', '4/5 mcp')
+
+// 5. Build UI → plugin/ui/
+mkdirSync(path.join(root, 'plugin/ui'), { recursive: true })
+run('pnpm --filter @claude-plugin-kit/ui build', '5/5 ui')
 
 // Stamp current version into plugin.json
 const pluginJsonPath = path.join(root, 'plugin/.claude-plugin/plugin.json')

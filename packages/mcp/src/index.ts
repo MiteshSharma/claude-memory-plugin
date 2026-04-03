@@ -32,12 +32,12 @@ server.registerTool(
       })
       if (project) params.set('project', project)
 
-      const res = await fetch(`${WORKER_URL}/api/activities/search?${params.toString()}`, {
+      const res = await fetch(`${WORKER_URL}/api/search?${params.toString()}`, {
         signal: AbortSignal.timeout(10_000),
       })
 
       if (!res.ok) {
-        return { content: [{ type: 'text', text: 'Search service unavailable.' }] }
+        return { content: [{ type: 'text' as const, text: 'Search service unavailable.' }] }
       }
 
       const data = (await res.json()) as { results?: unknown[] }
@@ -46,7 +46,7 @@ server.registerTool(
       return {
         content: [
           {
-            type: 'text',
+            type: 'text' as const,
             text:
               results.length > 0
                 ? JSON.stringify(results, null, 2)
@@ -55,62 +55,7 @@ server.registerTool(
         ],
       }
     } catch {
-      return { content: [{ type: 'text', text: 'Search service unavailable.' }] }
-    }
-  },
-)
-
-// ─── Tool: get_activities ────────────────────────────────────────────────────
-server.registerTool(
-  'get_activities',
-  {
-    description: 'Fetch full details for specific activities by ID',
-    inputSchema: {
-      ids: z.array(z.number()).describe('Array of activity IDs to fetch'),
-      project: z.string().optional().describe('Project name for context'),
-    },
-  },
-  async ({ ids, project }) => {
-    console.error(
-      `[mcp] get_activities: ids=${JSON.stringify(ids)} project="${project ?? ''}"`,
-    )
-    // Phase 1: stub — Phase 2 will implement full details from DB
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Fetching activities ${ids.join(', ')} — Phase 2 will implement full details.`,
-        },
-      ],
-    }
-  },
-)
-
-// ─── Tool: timeline ───────────────────────────────────────────────────────────
-server.registerTool(
-  'timeline',
-  {
-    description: 'Get context timeline around an activity or query',
-    inputSchema: {
-      anchor: z.number().optional().describe('Activity ID to center on'),
-      query: z.string().optional().describe('Query to find anchor automatically'),
-      depth_before: z.number().optional().default(5).describe('Events before anchor'),
-      depth_after: z.number().optional().default(5).describe('Events after anchor'),
-      project: z.string().optional().describe('Filter by project'),
-    },
-  },
-  async ({ anchor, query, depth_before, depth_after, project }) => {
-    console.error(
-      `[mcp] timeline: anchor=${anchor ?? 'none'} query="${query ?? ''}" project="${project ?? ''}" before=${depth_before ?? 5} after=${depth_after ?? 5}`,
-    )
-    // Phase 1: stub — Phase 4 will implement full timeline
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `Timeline around ${anchor != null ? `#${anchor}` : `"${query}"`} — Phase 4 will implement full timeline.`,
-        },
-      ],
+      return { content: [{ type: 'text' as const, text: 'Search service unavailable.' }] }
     }
   },
 )

@@ -15,13 +15,12 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // UserPromptSubmit sends the user's message in `prompt` field
-  await workerPost('/api/sessions/init', {
+  // Record the user's prompt against the existing session (init'd by SessionStart)
+  await workerPost('/api/sessions/prompt', {
     sessionId,
     project: getProject(workDir),
     workDir,
     userPrompt: input.prompt,
-    platform: 'claude-code',
   })
 
   process.exit(0)

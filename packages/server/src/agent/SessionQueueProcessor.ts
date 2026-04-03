@@ -102,7 +102,7 @@ export class SessionQueueProcessor {
 
   private async processToolUse(
     messageId: number,
-    message: { toolName: string | null; toolInput: string | null; toolResponse: string | null },
+    message: { toolName: string | null; toolInput: string | null; toolResponse: string | null; workDir: string | null },
   ): Promise<void> {
     const toolName = message.toolName ?? 'unknown'
     const toolInput = message.toolInput ? JSON.parse(message.toolInput) : {}
@@ -119,11 +119,18 @@ export class SessionQueueProcessor {
       return
     }
 
-    // Look up session for project + sessionDbId
-    const session = this.sessionRepo.findBySessionId(this.sessionId)
+    // Look up session — auto-create if user-prompt-submit hook lost the race
+    let session = this.sessionRepo.findBySessionId(this.sessionId)
     if (!session) {
-      this.queueRepo.confirmProcessed(messageId)
-      return
+      const workDir = message.workDir ?? ''
+      const project = workDir.split('/').filter(Boolean).pop() ?? 'unknown'
+      session = this.sessionRepo.create({
+        sessionId: this.sessionId,
+        project,
+        workDir,
+        platform: 'claude-code',
+      })
+      console.log(`[processor] auto-created session=${this.sessionId} project=${project}`)
     }
 
     for (const activity of activities) {

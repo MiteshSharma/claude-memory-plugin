@@ -3,12 +3,18 @@ import type {
   SessionInitRequest,
   SessionInitResponse,
   SessionCompleteResponse,
+  SessionPromptRequest,
+  SessionPromptResponse,
+  SessionTouchResponse,
 } from '@claude-plugin-kit/shared'
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { PromptRepository } from '../repositories/PromptRepository.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 import { OrphanRecoveryService } from './OrphanRecoveryService.js'
 import type { SessionManager } from '../agent/SessionManager.js'
+
+// Sessions idle longer than this are eligible for orphan recovery and will not be resumed
+const SESSION_TIMEOUT_MS = 10 * 60 * 1000 // 10 minutes
 
 export class SessionService {
   private readonly sessionRepo: SessionRepository
@@ -29,14 +35,20 @@ export class SessionService {
   }
 
   async init(data: SessionInitRequest): Promise<SessionInitResponse> {
-    // Recover orphaned sessions before creating/resuming
+    // Close sessions that have been idle beyond the timeout before checking for an active one
     await this.orphanRecovery.recoverOrphanedSessions()
 
-    const existing = this.sessionRepo.findBySessionId(data.sessionId)
+    // Find a session for this project/workDir that is still within the 10-min activity window
+    const existing = this.sessionRepo.findActiveByProject(data.project, data.workDir, SESSION_TIMEOUT_MS)
 
     if (existing) {
+      // Rebind the session to the current CLI session_id so all subsequent hook
+      // calls (which carry input.session_id) resolve to this logical session.
+      this.sessionRepo.updateSessionId(existing.id, data.sessionId)
+      this.sessionRepo.touchLastActivity(existing.id)
+
       if (data.userPrompt) {
-        const promptNumber = this.promptRepo.countBySession(data.sessionId) + 1
+        const promptNumber = this.promptRepo.countBySessionDbId(existing.id) + 1
         this.promptRepo.save({
           sessionDbId: existing.id,
           contentSessionId: data.sessionId,
@@ -47,9 +59,8 @@ export class SessionService {
       }
 
       this.sessionRepo.incrementPromptCounter(existing.id)
-      this.sessionRepo.touchLastActivity(existing.id)
 
-      console.log(`[session] resumed session=${data.sessionId} project=${data.project}`)
+      console.log(`[session] resumed session db_id=${existing.id} (${existing.sessionId}→${data.sessionId}) project=${data.project}`)
       return {
         sessionDbId: existing.id,
         sessionId: data.sessionId,
@@ -58,6 +69,7 @@ export class SessionService {
       }
     }
 
+    // No active session within window — start a new one
     const session = this.sessionRepo.create({
       sessionId: data.sessionId,
       project: data.project,
@@ -88,6 +100,35 @@ export class SessionService {
       project: data.project,
       status: 'created',
     }
+  }
+
+  async recordPrompt(data: SessionPromptRequest): Promise<SessionPromptResponse> {
+    const session = this.sessionRepo.findBySessionId(data.sessionId)
+    if (!session) {
+      return { saved: false, promptNumber: 0 }
+    }
+
+    const promptNumber = this.promptRepo.countBySession(data.sessionId) + 1
+    this.promptRepo.save({
+      sessionDbId: session.id,
+      contentSessionId: data.sessionId,
+      project: data.project ?? session.project,
+      promptNumber,
+      promptText: data.userPrompt,
+    })
+
+    this.sessionRepo.incrementPromptCounter(session.id)
+    this.sessionRepo.touchLastActivity(session.id)
+
+    console.log(`[session] prompt #${promptNumber} recorded session=${data.sessionId}`)
+    return { saved: true, promptNumber }
+  }
+
+  async touch(sessionId: string): Promise<SessionTouchResponse> {
+    const session = this.sessionRepo.findBySessionId(sessionId)
+    if (!session) return { ok: false }
+    this.sessionRepo.touchLastActivity(session.id)
+    return { ok: true }
   }
 
   async complete(sessionId: string): Promise<SessionCompleteResponse> {

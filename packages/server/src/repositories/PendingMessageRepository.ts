@@ -108,6 +108,28 @@ export class PendingMessageRepository {
     return rows.map((r) => r.sessionId)
   }
 
+  listAll(opts: { status?: string; sessionId?: string; limit?: number }): PendingMessageRow[] {
+    const limit = opts.limit ?? 50
+    const conditions = []
+
+    if (opts.status && opts.status !== 'all') {
+      conditions.push(eq(pendingMessages.status, opts.status))
+    }
+    if (opts.sessionId) {
+      conditions.push(eq(pendingMessages.sessionId, opts.sessionId))
+    }
+
+    const where = conditions.length > 0 ? and(...conditions) : undefined
+
+    return this.db
+      .select()
+      .from(pendingMessages)
+      .where(where)
+      .orderBy(pendingMessages.createdAt)
+      .limit(limit)
+      .all()
+  }
+
   countByStatus(): { pending: number; processing: number; failed: number } {
     const rows = this.db
       .select({

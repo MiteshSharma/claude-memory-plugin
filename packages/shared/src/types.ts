@@ -23,7 +23,8 @@ export type HealthResponse = z.infer<typeof HealthResponseSchema>
 
 export const StatsResponseSchema = z.object({
   sessions: z.number().describe('Total sessions stored'),
-  activities: z.number().describe('Total activities stored'),
+  activities: z.number().describe('Total AI-processed activities'),
+  rawEvents: z.number().describe('Total raw events captured'),
   uptime: z.number().describe('Server uptime in seconds'),
 })
 export type StatsResponse = z.infer<typeof StatsResponseSchema>
@@ -75,6 +76,92 @@ export const SessionsListResponseSchema = z.object({
 })
 export type SessionsListResponse = z.infer<typeof SessionsListResponseSchema>
 
+export const SessionSummarySchema = z.object({
+  id: z.number(),
+  request: z.string(),
+  investigated: z.string(),
+  insights: z.string(),
+  completed: z.string(),
+  pendingWork: z.string(),
+  notes: z.string(),
+  tokensUsed: z.number(),
+  createdAt: z.number(),
+})
+export type SessionSummary = z.infer<typeof SessionSummarySchema>
+
+export const SessionWithSummarySchema = SessionSchema.extend({
+  promptCounter: z.number(),
+  summary: SessionSummarySchema.nullable(),
+})
+export type SessionWithSummary = z.infer<typeof SessionWithSummarySchema>
+
+export const SessionsWithSummaryResponseSchema = z.object({
+  sessions: z.array(SessionWithSummarySchema),
+  total: z.number(),
+})
+export type SessionsWithSummaryResponse = z.infer<typeof SessionsWithSummaryResponseSchema>
+
+// ─── Timeline ─────────────────────────────────────────────────────────────────
+
+export const TimelinePromptItemSchema = z.object({
+  kind: z.literal('prompt'),
+  id: z.number(),
+  promptNumber: z.number(),
+  promptText: z.string(),
+  createdAt: z.string(),
+})
+export type TimelinePromptItem = z.infer<typeof TimelinePromptItemSchema>
+
+export const TimelineActivityItemSchema = z.object({
+  kind: z.literal('activity'),
+  id: z.number(),
+  promptNumber: z.number().nullable(),
+  type: z.string(),
+  title: z.string(),
+  narrative: z.string(),
+  facts: z.string(),
+  concepts: z.string(),
+  filesRead: z.string(),
+  filesModified: z.string(),
+  createdAt: z.number(),
+})
+export type TimelineActivityItem = z.infer<typeof TimelineActivityItemSchema>
+
+export const TimelineItemSchema = z.discriminatedUnion('kind', [
+  TimelinePromptItemSchema,
+  TimelineActivityItemSchema,
+])
+export type TimelineItem = z.infer<typeof TimelineItemSchema>
+
+export const TimelineResponseSchema = z.object({
+  items: z.array(TimelineItemSchema),
+  sessionId: z.string(),
+  promptCount: z.number(),
+  activityCount: z.number(),
+})
+export type TimelineResponse = z.infer<typeof TimelineResponseSchema>
+
+// ─── Patterns ─────────────────────────────────────────────────────────────────
+
+export const PatternItemSchema = z.object({
+  value: z.string(),
+  count: z.number(),
+})
+export type PatternItem = z.infer<typeof PatternItemSchema>
+
+export const PatternsQuerySchema = z.object({
+  project: z.string().optional(),
+  limit: z.coerce.number().min(1).max(50).default(10),
+})
+export type PatternsQuery = z.infer<typeof PatternsQuerySchema>
+
+export const PatternsResponseSchema = z.object({
+  topFiles: z.array(PatternItemSchema),
+  topConcepts: z.array(PatternItemSchema),
+  project: z.string().nullable(),
+})
+export type PatternsResponse = z.infer<typeof PatternsResponseSchema>
+
 // ─── Activities ──────────────────────────────────────────────────────────────
 
 export const ActivityRequestSchema = z.object({
@@ -94,6 +181,30 @@ export const ActivityResponseSchema = z.object({
 export type ActivityResponse = z.infer<typeof ActivityResponseSchema>
 
 // ─── Summarize ────────────────────────────────────────────────────────────────
+
+export const SessionPromptRequestSchema = z.object({
+  sessionId: z.string().min(1).describe('Session ID to record the prompt for'),
+  userPrompt: z.string().min(1).describe('User prompt text'),
+  workDir: z.string().min(1).describe('Current working directory'),
+  project: z.string().optional().describe('Project name (derived from workDir if omitted)'),
+})
+export type SessionPromptRequest = z.infer<typeof SessionPromptRequestSchema>
+
+export const SessionPromptResponseSchema = z.object({
+  saved: z.boolean(),
+  promptNumber: z.number(),
+})
+export type SessionPromptResponse = z.infer<typeof SessionPromptResponseSchema>
+
+export const SessionTouchRequestSchema = z.object({
+  sessionId: z.string().min(1).describe('Session ID to touch'),
+})
+export type SessionTouchRequest = z.infer<typeof SessionTouchRequestSchema>
+
+export const SessionTouchResponseSchema = z.object({
+  ok: z.boolean(),
+})
+export type SessionTouchResponse = z.infer<typeof SessionTouchResponseSchema>
 
 export const SummarizeRequestSchema = z.object({
   sessionId: z.string().min(1).describe('Session to summarize'),
@@ -135,7 +246,7 @@ export type TokenEconomics = z.infer<typeof TokenEconomicsSchema>
 // ─── Search ───────────────────────────────────────────────────────────────────
 
 export const SearchQuerySchema = z.object({
-  query: z.string().min(1).describe('Search query text'),
+  query: z.string().default('').describe('Search query text (empty returns all recent)'),
   project: z.string().optional().describe('Filter by project'),
   limit: z.coerce.number().min(1).max(100).default(20).describe('Max results'),
   type: z.enum(['activities', 'sessions', 'prompts', 'all']).default('all'),
@@ -158,6 +269,89 @@ export const SearchResponseSchema = z.object({
   query: z.string(),
 })
 export type SearchResponse = z.infer<typeof SearchResponseSchema>
+
+// ─── Prompts ──────────────────────────────────────────────────────────────────
+
+export const UserPromptSchema = z.object({
+  id: z.number(),
+  contentSessionId: z.string(),
+  project: z.string(),
+  promptNumber: z.number(),
+  promptText: z.string(),
+  createdAt: z.string(),
+})
+export type UserPrompt = z.infer<typeof UserPromptSchema>
+
+export const PromptsListQuerySchema = z.object({
+  project: z.string().optional().describe('Filter by project'),
+  sessionId: z.string().optional().describe('Filter by session ID'),
+  limit: z.coerce.number().min(1).max(200).default(50).describe('Max results'),
+  offset: z.coerce.number().min(0).default(0).describe('Offset for pagination'),
+})
+export type PromptsListQuery = z.infer<typeof PromptsListQuerySchema>
+
+export const PromptsListResponseSchema = z.object({
+  prompts: z.array(UserPromptSchema),
+  total: z.number(),
+})
+export type PromptsListResponse = z.infer<typeof PromptsListResponseSchema>
+
+// ─── Raw Events ──────────────────────────────────────────────────────────────
+
+export const RawEventSchema = z.object({
+  id: z.number(),
+  sessionId: z.string(),
+  eventType: z.string(),
+  payload: z.string(),
+  createdAt: z.string(),
+})
+export type RawEvent = z.infer<typeof RawEventSchema>
+
+export const RawEventsQuerySchema = z.object({
+  sessionId: z.string().optional().describe('Filter by session ID'),
+  limit: z.coerce.number().min(1).max(200).default(50).describe('Max results'),
+  offset: z.coerce.number().min(0).default(0).describe('Offset for pagination'),
+})
+export type RawEventsQuery = z.infer<typeof RawEventsQuerySchema>
+
+export const RawEventsResponseSchema = z.object({
+  events: z.array(RawEventSchema),
+  total: z.number(),
+})
+export type RawEventsResponse = z.infer<typeof RawEventsResponseSchema>
+
+// ─── Queue (Pending Messages) ────────────────────────────────────────────────
+
+export const QueueItemSchema = z.object({
+  id: z.number(),
+  sessionId: z.string(),
+  messageType: z.string(),
+  toolName: z.string().nullable(),
+  status: z.string(),
+  retryCount: z.number(),
+  errorMessage: z.string().nullable(),
+  createdAt: z.number(),
+  claimedAt: z.number().nullable(),
+})
+export type QueueItem = z.infer<typeof QueueItemSchema>
+
+export const QueueQuerySchema = z.object({
+  status: z.enum(['pending', 'processing', 'failed', 'all']).default('all').describe('Filter by status'),
+  sessionId: z.string().optional().describe('Filter by session ID'),
+  limit: z.coerce.number().min(1).max(200).default(50).describe('Max results'),
+})
+export type QueueQuery = z.infer<typeof QueueQuerySchema>
+
+export const QueueResponseSchema = z.object({
+  items: z.array(QueueItemSchema),
+  total: z.number(),
+  counts: z.object({
+    pending: z.number(),
+    processing: z.number(),
+    failed: z.number(),
+  }),
+})
+export type QueueResponse = z.infer<typeof QueueResponseSchema>
 
 // ─── Hook Input (Claude Code stdin format) ────────────────────────────────────
 // Claude Code sends different fields per event type:

@@ -1,8 +1,9 @@
-import { ensureWorkerRunning, workerGet } from './shared/worker.js'
+import { ensureWorkerRunning, workerGet, workerPost } from './shared/worker.js'
 import { readHookInput, getProject } from './shared/stdin.js'
 
 async function main(): Promise<void> {
   const input = readHookInput()
+  const sessionId = input.session_id
   const workDir = input.cwd ?? process.cwd()
   const project = getProject(workDir)
 
@@ -13,7 +14,17 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // 2. Fetch context to inject into this session
+  // 2. Init the session — this is the authoritative start of a CLI session
+  if (sessionId) {
+    await workerPost('/api/sessions/init', {
+      sessionId,
+      project,
+      workDir,
+      platform: 'claude-code',
+    })
+  }
+
+  // 3. Fetch context to inject into this session
   const res = await workerGet(`/api/context/inject?project=${encodeURIComponent(project)}`)
   if (!res?.ok) {
     process.exit(0)

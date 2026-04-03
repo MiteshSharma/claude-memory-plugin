@@ -1,4 +1,4 @@
-import { eq, and, lt, or, isNull, desc, sql, count } from 'drizzle-orm'
+import { eq, and, lt, or, isNull, gt, desc, sql, count } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
 import { sessions, type SessionRow } from '../db/schema/index.js'
 
@@ -30,9 +30,37 @@ export class SessionRepository {
         project: data.project,
         workDir: data.workDir,
         platform: data.platform,
+        lastActivityAt: Date.now(),
       })
       .returning()
       .get()
+  }
+
+  // Find the single active session for a project/workDir within the inactivity window.
+  // Returns undefined if no session is active or all are idle beyond timeoutMs.
+  findActiveByProject(project: string, workDir: string, timeoutMs: number): SessionRow | undefined {
+    const cutoff = Date.now() - timeoutMs
+    return this.db
+      .select()
+      .from(sessions)
+      .where(and(
+        eq(sessions.project, project),
+        eq(sessions.workDir, workDir),
+        eq(sessions.status, 'active'),
+        gt(sessions.lastActivityAt, cutoff),
+      ))
+      .orderBy(desc(sessions.lastActivityAt))
+      .get()
+  }
+
+  // Rebind the session to a new CLI session ID so all subsequent hook calls
+  // that carry the new session_id resolve to this logical session.
+  updateSessionId(id: number, newSessionId: string): void {
+    this.db
+      .update(sessions)
+      .set({ sessionId: newSessionId })
+      .where(eq(sessions.id, id))
+      .run()
   }
 
   markComplete(sessionId: string): void {

@@ -15,13 +15,11 @@ async function main(): Promise<void> {
     process.exit(0)
   }
 
-  // Fire summarize + complete in parallel — both are fire-and-forget
+  // Touch to keep session alive + enqueue summarize — both fire-and-forget
+  // Session remains active; stale sweeper marks it complete after inactivity
   await Promise.allSettled([
-    workerPost('/api/sessions/summarize', {
-      sessionId,
-      workDir,
-    }),
-    workerPost('/api/sessions/complete', { sessionId }),
+    workerPost('/api/sessions/touch', { sessionId }),
+    workerPost('/api/sessions/summarize', { sessionId, workDir }),
   ])
 
   process.exit(0)

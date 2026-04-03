@@ -8,18 +8,21 @@ import type {
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 import { SessionRepository } from '../repositories/SessionRepository.js'
+import { SearchService } from './SearchService.js'
 import type { SessionManager } from '../agent/SessionManager.js'
 
 export class ActivityService {
   private readonly activityRepo: ActivityRepository
   private readonly queueRepo: PendingMessageRepository
   private readonly sessionRepo: SessionRepository
+  private readonly searchService: SearchService
   private sessionManager: SessionManager | null = null
 
   constructor(db: Db) {
     this.activityRepo = new ActivityRepository(db)
     this.queueRepo = new PendingMessageRepository(db)
     this.sessionRepo = new SessionRepository(db)
+    this.searchService = new SearchService(db)
   }
 
   setSessionManager(manager: SessionManager): void {
@@ -64,8 +67,7 @@ export class ActivityService {
     return { queued: true, messageId: message.id }
   }
 
-  async search(_query: SearchQuery): Promise<SearchResponse> {
-    // Phase 5 implements full vector search
-    return { results: [], total: 0, query: _query.query }
+  async search(query: SearchQuery): Promise<SearchResponse> {
+    return this.searchService.search(query)
   }
 }

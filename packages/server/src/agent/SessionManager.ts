@@ -23,7 +23,7 @@ export class SessionManager {
 
   async start(): Promise<void> {
     if (!AGENT_ENABLED) {
-      console.log('[session-manager] agent disabled (no ANTHROPIC_API_KEY)')
+      console.log('[session-manager] agent disabled (PLUGIN_AGENT_DISABLED=1)')
       return
     }
 
@@ -76,8 +76,11 @@ export class SessionManager {
 
     const processor = new SessionQueueProcessor(this.db, sessionId)
     const promise = processor.start().then(() => {
-      // Processor stopped (idle timeout or explicit stop) — clean up
-      this.sessions.delete(sessionId)
+      // Only remove this specific processor — a newer one may have already replaced it
+      const current = this.sessions.get(sessionId)
+      if (current?.processor === processor) {
+        this.sessions.delete(sessionId)
+      }
     })
 
     this.sessions.set(sessionId, {

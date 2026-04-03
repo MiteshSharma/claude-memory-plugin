@@ -1,5 +1,8 @@
+import { existsSync } from 'fs'
+import path from 'path'
 import Fastify, { type FastifyInstance } from 'fastify'
 import cors from '@fastify/cors'
+import fastifyStatic from '@fastify/static'
 import type { Db } from './db/database.js'
 import type { SessionManager } from './agent/SessionManager.js'
 import { registerSwagger } from './plugins/swagger.js'
@@ -36,6 +39,30 @@ export async function createServer(
   app.decorate('sessionManager', sessionManager)
 
   await registerRoutes(app)
+
+  // Serve built UI if available
+  const uiPaths = [
+    path.resolve(process.cwd(), 'plugin/ui'),
+    path.resolve(process.cwd(), '../../plugin/ui'),
+    path.resolve(process.cwd(), '../plugin/ui'),
+  ]
+  const uiDir = uiPaths.find((p) => existsSync(path.join(p, 'index.html')))
+
+  if (uiDir) {
+    await app.register(fastifyStatic, {
+      root: uiDir,
+      prefix: '/',
+      decorateReply: false,
+    })
+
+    // SPA fallback — serve index.html for non-API, non-docs routes
+    app.setNotFoundHandler((req, reply) => {
+      if (req.url.startsWith('/api') || req.url.startsWith('/docs')) {
+        return reply.code(404).send({ error: 'Not Found' })
+      }
+      return reply.sendFile('index.html', uiDir)
+    })
+  }
 
   return app
 }
