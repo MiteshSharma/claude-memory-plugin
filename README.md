@@ -1,287 +1,243 @@
-# Claude Plugin Kit
+# Memory Updater
 
-Persistent memory and context injection plugin for Claude Code — remembers what you built across sessions.
+> Claude Code, but it actually remembers you.
 
-## What It Does
+Claude Code is powerful — but every session starts from zero. No memory of what you built yesterday. No awareness of decisions made last week. No continuity across your work.
 
-Claude Code forgets everything between sessions. This plugin captures tool activity (edits, commands), stores it in a local SQLite database, and injects relevant context back into future sessions automatically.
+**Memory Updater** fixes that. It silently observes every session, extracts what matters, and injects it back the next time you open Claude Code — so your AI pair programmer walks in already knowing your codebase, your decisions, and where you left off.
 
-**How it works:**
-1. **Hooks** intercept Claude Code lifecycle events (session start, user prompts, tool use, session end)
-2. **Server** receives and stores these events locally via a Fastify API
-3. **AI Observer Agent** asynchronously processes raw events using Claude CLI to extract structured activities and session summaries
-4. **Context injection** feeds session history back to Claude on the next session start (minimal / standard / full modes)
-5. **MCP tools** let Claude search past activities and session summaries
-6. **React UI** provides a visual session timeline viewer
+---
 
-## Prerequisites
+## Why This Exists
 
-- Node.js >= 22
-- pnpm >= 9
-- Claude Code CLI installed and on `$PATH` (required for AI Observer Agent)
+| Without Memory Updater | With Memory Updater |
+|------------------------|---------------------|
+| Re-explain your stack every session | Claude already knows your stack |
+| Re-describe what you built last week | Claude knows what was completed |
+| Repeat context about in-progress work | Claude picks up exactly where you left off |
+| Waste tokens on orientation | Spend tokens on actual work |
+| Claude makes decisions you already reversed | Claude remembers your decisions |
+
+---
+
+## What It Does For You
+
+### Persistent Memory — Context Survives Across Sessions
+Every tool Claude uses (file reads, edits, commands) is captured and processed by an AI observer. The observer distils each session into structured memory: what was built, what was investigated, what decisions were made, what's still pending. That memory is injected into your next session automatically.
+
+### Smarter With Every Session
+The more you use Claude Code, the smarter it gets about your project. Memory Updater builds a growing knowledge base of your codebase decisions, patterns, and history — making Claude progressively more useful over time rather than resetting to zero every day.
+
+### Zero Friction
+No workflow changes. No prompts to fill in. No manual summaries to write. Everything happens in the background through Claude Code's native hook system. You work exactly as you always have — Memory Updater handles the rest silently.
+
+### Full-Text Search Over Your History
+Every activity, session summary, and prompt is indexed with SQLite FTS5. Ask the MCP tool to find what you worked on: `search("rate limiting implementation")` — and get back the exact session, files touched, and decisions made.
+
+### Token Economics — ROI You Can Measure
+The context injected at session start is worth more than it costs. Memory Updater tracks tokens spent generating memory vs. tokens read back, and shows you the ROI. Typical sessions run 3–5× return — you get compressed, pre-reasoned history at a fraction of the token cost of re-establishing context manually.
+
+---
+
+## How It Works
+
+```
+Your session
+  → PostToolUse hook captures every tool call
+    → AI Observer (Claude Haiku) extracts structured activities
+      → Activities stored in local SQLite + FTS5 index
+        → On Stop: session summarised (request → investigation → outcome)
+          → Next SessionStart: context injected into system prompt
+            → Claude walks in already knowing your project
+```
+
+**Data stays local.** Everything is stored in `~/.claude-plugin-kit/plugin.db` on your machine. Nothing is sent to any external service.
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Clone and install
+# Install globally
+npm install -g claude-plugin-kit
+
+# Or one-liner
+curl -fsSL https://raw.githubusercontent.com/your-org/claude-plugin-kit/main/scripts/install.sh | bash
+```
+
+Then restart Claude Code. That's it.
+
+### Manual Install (from source)
+
+```bash
 git clone <repo-url> claude-memory-plugin
 cd claude-memory-plugin
 pnpm install
-
-# 2. Build all packages
 pnpm build:plugin
-
-# 3. Start the server
-cd packages/server && pnpm dev
-# Server:   http://127.0.0.1:37799
-# Swagger:  http://127.0.0.1:37799/docs
-
-# 4. Register hooks + MCP (writes to ~/.claude/settings.json and ~/.claude/mcp.json)
-node scripts/register-hooks.js
-# MCP-only alternative:
-node scripts/register-mcp.js
-
-# 5. Restart Claude Code — hooks and MCP tools are now active
+node bin/cli.js install
 ```
 
-### Project-Level Setup (Alternative)
+---
 
-Pre-configured files are checked in to the repo root:
+## CLI
 
-- `.claude/settings.json` — hooks with relative paths
-- `.mcp.json` — MCP server registration
+```bash
+claude-plugin-kit install    # Register hooks + MCP in ~/.claude/
+claude-plugin-kit uninstall  # Remove hooks, MCP, stop server
+claude-plugin-kit status     # Is the server running? Hooks registered?
+claude-plugin-kit doctor     # Full diagnostic
+claude-plugin-kit restart    # Restart the background server
+```
 
-No registration script needed — just build and start the server.
+---
+
+## What Gets Injected
+
+Each session start receives a context block like this in the system prompt:
+
+```markdown
+## my-project — Project Memory
+
+47 activities across 12 sessions
+
+### Previously
+- Apr 1: Added auth middleware → JWT validation complete
+- Apr 2: Fixed DB connection pool leak → Resolved, pool capped at 10
+- Apr 3: Phase 7 production hardening → AppError, pino logger, PID file, graceful shutdown
+
+### Latest Session
+**Request**: Implement Phase 7 production hardening
+**Investigated**: Fastify error handler patterns, pino multistream for log rotation
+**Insights**: force-exit timer must use .unref() to avoid blocking event loop
+**Completed**: AppError, global error handler, 10KB payload cap, readiness probe
+**Pending**: pino-roll for log rotation
+
+### Recent Activity
+
+**Thu, Apr 3**
+- [edit] packages/server/src/lib/errors.ts — AppError with statusCode, code, isOperational
+- [edit] packages/server/src/lib/logger.ts — pino multistream: stdout + server.log
+- [edit] packages/server/src/index.ts — PID file, stale detection, 5s graceful shutdown
+
+---
+*47 activities · ~890 read tokens · 3.8× ROI*
+```
+
+---
+
+## MCP Search Tool
+
+Once installed, Claude Code gains a `search` tool:
+
+```
+search("rate limiting")           → finds all sessions where you implemented throttling
+search("auth", project="api")     → scoped to a specific project
+search("payment", type="sessions") → only session summaries
+```
+
+---
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PLUGIN_PORT` | `37799` | Server port |
+| `PLUGIN_DATA_DIR` | `~/.claude-plugin-kit` | Where data is stored |
+| `PLUGIN_AGENT_MODEL` | `haiku` | Claude model for AI Observer (`haiku` / `sonnet` / `opus`) |
+| `PLUGIN_AGENT_DISABLED` | unset | Set `1` to disable the AI Observer (raw capture only) |
+| `PLUGIN_LOG_LEVEL` | `info` | Log level (`info` / `debug` / `warn` / `error`) |
+
+---
+
+## Context Injection Modes
+
+Control how much context is injected per session:
+
+| Mode | Activities | Summaries | Best For |
+|------|-----------|-----------|----------|
+| `minimal` | 0 | 0 | Minimal token overhead |
+| `standard` | up to 50 | up to 3 | Daily use (default) |
+| `full` | up to 200 | up to 3 | Deep dives into long-running projects |
+
+Set via: `GET /api/context/inject?mode=full`
+
+---
 
 ## Architecture
 
 ```
 packages/
-  shared/     Zod schemas (single source of truth for all API contracts)
+  shared/     Zod schemas — single source of truth for all API contracts
   server/     Fastify 5 server: routes → services → repositories
   hooks/      5 Claude Code hook scripts
-  mcp/        MCP server: search tool
-  ui/         React 19 + Vite viewer (Phase 6)
+  mcp/        MCP server exposing the search tool
+  ui/         React 19 + Vite session timeline viewer
 
-plugin/       Built output (generated by pnpm build:plugin)
-  scripts/    Bundled .js/.cjs files ready to run
-  hooks/      hooks.json (Claude Code hook registrations)
-  .mcp.json   MCP server registration
-
-scripts/      Build + install utilities
-plan/         Phase implementation plans
+plugin/       Built distributable (committed to git — no build step needed)
+  scripts/    server.cjs, mcp-server.cjs, hook .js files
 ```
 
-## Hooks
+**Server** runs at `http://127.0.0.1:37799` (localhost only). Swagger docs at `/docs`.
 
-The plugin registers 5 hooks into Claude Code's lifecycle:
+**Database** — SQLite at `~/.claude-plugin-kit/plugin.db` with WAL mode and FTS5 full-text search.
 
-| Event | Script | What It Does |
-|-------|--------|--------------|
-| SessionStart | session-start.js | Ensures server daemon is running; injects past context |
-| SessionStart | user-message.js | Logs project stats to stderr |
-| UserPromptSubmit | user-prompt-submit.js | Creates/resumes a session, stores the user prompt |
-| PostToolUse | post-tool-use.js | Captures tool name, input, and response; enqueues for AI processing |
-| Stop | stop.js | Enqueues summarization; stale sweeper marks session complete |
+**AI Observer** — async background pipeline: captures tool events → processes via Claude Haiku → stores structured activities → FTS5 indexed.
 
-All hooks exit 0 on any failure — they never block Claude Code.
+---
 
-## API Endpoints
+## API Reference
 
-Server binds to `127.0.0.1:37799` (localhost only). Full interactive docs at `/docs`.
-
-### Health
+Server binds to `127.0.0.1:37799`. Full docs at `http://127.0.0.1:37799/docs`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/health` | Liveness probe (status, version, uptime, pid, db) |
-| GET | `/api/stats` | Session + activity + raw event counts |
-| GET | `/api/processing-status` | Queue processing status |
+| GET | `/api/health` | Liveness probe |
+| GET | `/api/readiness` | Readiness probe (503 until fully initialised) |
+| GET | `/api/stats` | Session + activity counts |
+| POST | `/api/sessions/init` | Create or resume a session |
+| POST | `/api/sessions/summarize` | Enqueue session summarization |
+| GET | `/api/sessions` | List sessions with latest summary |
+| GET | `/api/sessions/:id/timeline` | Chronological prompts + activities |
+| POST | `/api/activities` | Store a tool activity |
+| GET | `/api/context/inject` | Get injectable context (`?mode=minimal\|standard\|full`) |
+| GET | `/api/context/token-economics` | ROI breakdown |
+| GET | `/api/search` | Unified FTS5 search |
+| GET | `/api/patterns` | Top recurring files and concepts |
+| GET | `/api/queue` | AI processing queue status |
+| GET | `/api/stream` | SSE for real-time viewer |
 
-### Sessions
+---
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/sessions/init` | Create or resume a session (10-min idle window) |
-| POST | `/api/sessions/complete` | Mark session as complete |
-| POST | `/api/sessions/prompt` | Record a user prompt against an existing session |
-| POST | `/api/sessions/touch` | Update lastActivityAt to keep session alive |
-| POST | `/api/sessions/summarize` | Enqueue a summarization job for the session |
-| GET | `/api/sessions` | List sessions with latest summary attached |
-| GET | `/api/sessions/:sessionId/timeline` | Interleaved prompts + activities (chronological) |
+## Build Status
 
-### Activities
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Base Framework | ✅ |
+| 2 | Data Layer — Drizzle ORM, FTS5 | ✅ |
+| 3 | AI Observer Agent | ✅ |
+| 4 | Context Injection System | ✅ |
+| 5 | Search (FTS5 complete, vector pending) | ✅ |
+| 6 | React Viewer UI | ✅ |
+| 7 | Production Hardening | ✅ |
+| 8 | Testing | ⏳ |
+| 9 | Distribution (CLI, npm, install.sh) | ✅ |
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/api/activities` | Store a tool usage activity (enqueues for AI processing) |
-| GET | `/api/activities/search` | Search activities (Phase 5: full vector search) |
-
-### Context
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/context/inject` | Get injectable context for session start (`?project=&mode=minimal\|standard\|full`) |
-| GET | `/api/context/preview` | Preview context that would be injected (includes debug info) |
-| GET | `/api/context/token-economics` | Token economics breakdown (tokens spent vs saved, ROI) |
-
-### Search
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/search` | Unified FTS5 search across activities, summaries, and prompts |
-| GET | `/api/search/activities` | Search activities only (paginated) |
-| GET | `/api/search/sessions` | Search session summaries |
-| GET | `/api/search/timeline` | Get context timeline around an activity by ID |
-| GET | `/api/search/details` | Fetch full activity details by IDs |
-
-### Debug / Admin
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/projects` | List all distinct project names |
-| GET | `/api/patterns` | Top recurring files and concepts across activities |
-| GET | `/api/prompts` | List user prompts (filterable by project/session) |
-| GET | `/api/raw-events` | List raw event intake buffer |
-| GET | `/api/queue` | List pending AI processing queue messages |
-| GET | `/api/stream` | SSE endpoint for real-time updates |
-| POST | `/api/admin/restart` | Gracefully restart the server (localhost-only) |
-| POST | `/api/admin/shutdown` | Shut down the server cleanly (localhost-only) |
-
-### Context Injection Modes
-
-`GET /api/context/inject?mode=<mode>` supports three modes:
-
-| Mode | Activities Included | Summaries | Use Case |
-|------|-------------------|-----------|----------|
-| `minimal` | 0 | 0 | Minimal token cost, header only |
-| `standard` | up to 50 | up to 3 | Balanced (default) |
-| `full` | up to 200 | up to 3 | Comprehensive history |
-
-## MCP Tools
-
-When registered, Claude Code gains the **search** tool via the `claude-plugin-kit` MCP server:
-
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `search` | Search past activities and session summaries | `query` (required), `project` (optional), `limit` (default 20, max 100), `type: activities\|sessions\|all` (default `all`) |
-
-## AI Observer Agent
-
-The AI Observer runs as an async background pipeline inside the server:
-
-```
-PostToolUse hook
-  → POST /api/activities
-    → raw_events stored
-    → pending_messages queued
-      → SessionQueueProcessor claims messages
-        → ObserverAgent spawns: claude -p --output-format json
-          → activities extracted + stored in SQLite
-            → FTS5 indexes updated automatically via triggers
-```
-
-**ObserverAgent** uses two system prompts to:
-- Extract structured activities (title, narrative, facts, concepts, files read/modified) from each tool event
-- Generate session summaries (request, investigated, insights, completed, pending work, notes)
-
-**SessionQueueProcessor** — per-session event loop:
-- Claims pending messages, processes via ObserverAgent, confirms or marks failed with error message
-- Idle timeout: 3 minutes (processor stops if no work arrives)
-
-**SessionManager** — global lifecycle:
-- Recovers sessions with pending messages on server restart
-- Stale reaper runs every 2 minutes; reaps sessions idle > 6 hours
-- Disable agent: `PLUGIN_AGENT_DISABLED=1`
-
-## Database Schema
-
-SQLite at `~/.claude-plugin-kit/plugin.db` (WAL mode, 3 auto-run migrations).
-
-| Table | Purpose |
-|-------|---------|
-| `sessions` | Claude Code sessions (status, project, workDir, promptCounter) |
-| `raw_events` | Event intake buffer |
-| `user_prompts` | User prompts per session |
-| `activities` | AI-extracted observations (facts, concepts, files read/modified) |
-| `session_summaries` | Structured session wrap-ups |
-| `pending_messages` | AI processing queue (claim → process → confirm/fail) |
-| `activities_fts` | FTS5 virtual table (title, narrative, facts, concepts) |
-| `summaries_fts` | FTS5 virtual table (request, insights, notes) |
-| `prompts_fts` | FTS5 virtual table (prompt_text) |
-
-FTS5 tables stay in sync via INSERT/UPDATE/DELETE triggers on each main table.
-
-## Configuration
-
-All settings via environment variables:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PLUGIN_PORT` | `37799` | Server port |
-| `PLUGIN_HOST` | `127.0.0.1` | Server bind address |
-| `PLUGIN_DATA_DIR` | `~/.claude-plugin-kit` | Database and data directory |
-| `PLUGIN_LOG_LEVEL` | `info` | Log level (`info\|debug\|warn\|error`) |
-| `CLAUDE_CLI_PATH` | `claude` | Path to the Claude Code CLI binary |
-| `PLUGIN_AGENT_MODEL` | `haiku` | Claude model for AI Observer (`haiku\|sonnet\|opus`) |
-| `PLUGIN_AGENT_DISABLED` | unset | Set to `1` to disable the AI Observer Agent entirely |
-
-## Development
-
-```bash
-# Start server in dev mode (pretty logs, tsx auto-reload)
-cd packages/server && pnpm dev
-
-# Build all packages → plugin/
-pnpm build:plugin
-
-# Type-check all packages
-pnpm typecheck
-
-# Lint
-pnpm lint
-
-# Test
-pnpm test
-
-# Clean all build artifacts
-pnpm clean
-```
-
-### Package Scripts
-
-| Package | Command | Description |
-|---------|---------|-------------|
-| root | `pnpm build:plugin` | Full distributable build |
-| root | `pnpm register` | Register hooks in `~/.claude/settings.json` |
-| root | `pnpm register:mcp` | Register MCP server only |
-| server | `pnpm dev` | Dev server with tsx |
-| ui | `pnpm dev` | Vite dev server |
-| hooks | `pnpm dev` | Watch mode build |
-
-## Key Timeouts & Constants
-
-| Constant | Value | Purpose |
-|----------|-------|---------|
-| Session resume window | 10 min | Idle window before a new session is created |
-| Queue processor idle timeout | 3 min | Processor stops if no messages arrive |
-| Stale reaper interval | 2 min | How often stale sessions are checked |
-| Stale session threshold | 6 hours | Idle time before session is marked failed |
-| ObserverAgent timeout | 60 sec | Max time for a single Claude CLI call |
+---
 
 ## Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Runtime | Node.js 22 |
-| Server | Fastify 5 + Zod + fastify-type-provider-zod |
+| Server | Fastify 5 + Zod |
 | ORM | Drizzle ORM |
-| Database | better-sqlite3 (WAL mode, FTS5) |
-| AI Agent | @anthropic-ai/sdk + Claude CLI subprocess |
+| Database | better-sqlite3 (WAL + FTS5) |
+| AI Observer | Claude Haiku via CLI subprocess |
 | MCP | @modelcontextprotocol/sdk |
-| Monorepo | pnpm workspaces + Turborepo |
-| Build | esbuild |
-| UI | React 19 + Vite + Ant Design + TanStack Query |
+| Build | esbuild + Turborepo |
+| UI | React 19 + Vite + Ant Design |
+
+---
 
 ## License
 
