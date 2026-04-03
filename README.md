@@ -206,21 +206,6 @@ Server binds to `127.0.0.1:37799`. Full docs at `http://127.0.0.1:37799/docs`.
 | GET | `/api/queue` | AI processing queue status |
 | GET | `/api/stream` | SSE for real-time viewer |
 
----
-
-## Build Status
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Base Framework | ✅ |
-| 2 | Data Layer — Drizzle ORM, FTS5 | ✅ |
-| 3 | AI Observer Agent | ✅ |
-| 4 | Context Injection System | ✅ |
-| 5 | Search (FTS5 complete, vector pending) | ✅ |
-| 6 | React Viewer UI | ✅ |
-| 7 | Production Hardening | ✅ |
-| 8 | Testing | ⏳ |
-| 9 | Distribution (CLI, npm, install.sh) | ✅ |
 
 ---
 
