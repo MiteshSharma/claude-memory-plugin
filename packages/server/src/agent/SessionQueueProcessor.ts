@@ -6,6 +6,7 @@ import { SummaryRepository } from '../repositories/SummaryRepository.js'
 import { PromptRepository } from '../repositories/PromptRepository.js'
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { ObserverAgent, type ExtractedActivity } from './ObserverAgent.js'
+import { logger } from '../lib/logger.js'
 
 const IDLE_TIMEOUT_MS = 3 * 60 * 1000 // 3 minutes
 
@@ -41,7 +42,7 @@ export class SessionQueueProcessor {
     if (this.running) return
     this.running = true
     this.resetIdleTimer()
-    console.log(`[processor] started for session=${this.sessionId}`)
+    logger.info({ sessionId: this.sessionId }, 'processor started')
 
     while (this.running) {
       const message = this.queueRepo.claimNext(this.sessionId)
@@ -74,12 +75,12 @@ export class SessionQueueProcessor {
         }
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err)
-        console.error(`[processor] failed message=${message.id}: ${errorMsg}`)
+        logger.error({ sessionId: this.sessionId, messageId: message.id, err: errorMsg }, 'message processing failed')
         this.queueRepo.markFailed(message.id, errorMsg)
       }
     }
 
-    console.log(`[processor] stopped for session=${this.sessionId}`)
+    logger.info({ sessionId: this.sessionId }, 'processor stopped')
   }
 
   stop(): void {
@@ -95,7 +96,7 @@ export class SessionQueueProcessor {
   private resetIdleTimer(): void {
     if (this.idleTimer) clearTimeout(this.idleTimer)
     this.idleTimer = setTimeout(() => {
-      console.log(`[processor] idle timeout for session=${this.sessionId}`)
+      logger.info({ sessionId: this.sessionId }, 'processor idle timeout')
       this.stop()
     }, IDLE_TIMEOUT_MS)
   }
@@ -130,7 +131,7 @@ export class SessionQueueProcessor {
         workDir,
         platform: 'claude-code',
       })
-      console.log(`[processor] auto-created session=${this.sessionId} project=${project}`)
+      logger.info({ sessionId: this.sessionId, project }, 'auto-created session')
     }
 
     for (const activity of activities) {
@@ -138,9 +139,7 @@ export class SessionQueueProcessor {
     }
 
     this.queueRepo.confirmProcessed(messageId)
-    console.log(
-      `[processor] extracted ${activities.length} activities from ${toolName} (${tokensUsed} tokens)`,
-    )
+    logger.info({ sessionId: this.sessionId, toolName, count: activities.length, tokensUsed }, 'activities extracted')
   }
 
   private storeActivity(
@@ -211,7 +210,7 @@ export class SessionQueueProcessor {
         notes: summary.notes ?? '',
         tokensUsed,
       })
-      console.log(`[processor] summarized session=${this.sessionId} (${tokensUsed} tokens)`)
+      logger.info({ sessionId: this.sessionId, tokensUsed }, 'session summarized')
     }
 
     this.queueRepo.confirmProcessed(messageId)

@@ -18,7 +18,8 @@ export async function rawEventRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (req, reply) => {
-      const { events, total } = activityRepo.listRawEvents(req.query)
+      const { limit, offset, sessionId } = req.query
+      const { events, total } = activityRepo.listRawEvents({ limit, offset, ...(sessionId !== undefined && { sessionId }) })
       return reply.code(200).send({ events, total })
     },
   )

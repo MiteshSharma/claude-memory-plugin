@@ -10,6 +10,8 @@ import { PendingMessageRepository } from '../repositories/PendingMessageReposito
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { SearchService } from './SearchService.js'
 import type { SessionManager } from '../agent/SessionManager.js'
+import { logger } from '../lib/logger.js'
+import { capPayload } from '../lib/sanitize.js'
 
 export class ActivityService {
   private readonly activityRepo: ActivityRepository
@@ -30,16 +32,14 @@ export class ActivityService {
   }
 
   async store(data: ActivityRequest): Promise<ActivityResponse> {
-    const inputPreview = JSON.stringify(data.toolInput ?? {}).slice(0, 200)
-    const outputPreview = JSON.stringify(data.toolResponse ?? {}).slice(0, 200)
+    logger.info(
+      { sessionId: data.sessionId, tool: data.toolName, promptNumber: data.promptNumber ?? 'unknown' },
+      'activity received',
+    )
 
-    console.log(`\n══════════════════════════════════════════`)
-    console.log(`[ACTIVITY]  session=${data.sessionId}  tool=${data.toolName}`)
-    console.log(`  workDir     : ${data.workDir}`)
-    console.log(`  prompt_num  : ${data.promptNumber ?? 'unknown'}`)
-    console.log(`  tool_input  : ${inputPreview}`)
-    console.log(`  tool_output : ${outputPreview}`)
-    console.log(`══════════════════════════════════════════\n`)
+    // Cap payloads to 10KB (first 5KB + last 5KB) — never log contents (may contain secrets)
+    const toolInput = capPayload(JSON.stringify(data.toolInput ?? {}))
+    const toolResponse = capPayload(JSON.stringify(data.toolResponse ?? {}))
 
     // Store raw event (Phase 1 intake buffer)
     this.activityRepo.storeRawEvent({
@@ -55,8 +55,8 @@ export class ActivityService {
       sessionId: data.sessionId,
       messageType: 'tool_use',
       toolName: data.toolName,
-      toolInput: JSON.stringify(data.toolInput ?? {}),
-      toolResponse: JSON.stringify(data.toolResponse ?? {}),
+      toolInput,
+      toolResponse,
       workDir: data.workDir,
       promptNumber: data.promptNumber,
     })

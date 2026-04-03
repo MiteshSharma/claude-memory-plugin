@@ -12,21 +12,7 @@ Claude Code forgets everything between sessions. This plugin captures tool activ
 3. **AI Observer Agent** asynchronously processes raw events using Claude CLI to extract structured activities and session summaries
 4. **Context injection** feeds session history back to Claude on the next session start (minimal / standard / full modes)
 5. **MCP tools** let Claude search past activities and session summaries
-6. **React UI** (Phase 6) provides a visual session timeline viewer
-
-## Current Status
-
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 1 | Base Framework | ✅ Complete |
-| 2 | Data Layer (Drizzle ORM, full schema, FTS5) | ✅ Complete |
-| 3 | AI Observer Agent (Claude CLI, async queue) | ✅ Complete |
-| 4 | Context System (summaries, injection, token economics) | ✅ Complete |
-| 5 | Search (SQLite FTS5 complete; vector search pending) | 🔄 In Progress |
-| 6 | React Viewer UI | 🔄 Scaffolded |
-| 7 | Production Hardening | ⏳ Pending |
-| 8 | Testing | ⏳ Pending |
-| 9 | Distribution | ⏳ Pending |
+6. **React UI** provides a visual session timeline viewer
 
 ## Prerequisites
 

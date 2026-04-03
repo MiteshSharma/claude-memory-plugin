@@ -8,6 +8,7 @@ import type { SessionManager } from './agent/SessionManager.js'
 import { registerSwagger } from './plugins/swagger.js'
 import { registerRoutes } from './routes/index.js'
 import { LOG_LEVEL, IS_DEV } from './config.js'
+import { AppError } from './lib/errors.js'
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -39,6 +40,15 @@ export async function createServer(
   app.decorate('sessionManager', sessionManager)
 
   await registerRoutes(app)
+
+  // Global error handler — maps AppError → structured HTTP response
+  app.setErrorHandler((err, req, reply) => {
+    if (err instanceof AppError && err.isOperational) {
+      return reply.code(err.statusCode).send({ error: err.message, code: err.code })
+    }
+    app.log.error({ err, url: req.url, method: req.method }, 'unhandled error')
+    return reply.code(500).send({ error: 'Internal Server Error', code: 'INTERNAL_ERROR' })
+  })
 
   // Serve built UI if available
   const uiPaths = [

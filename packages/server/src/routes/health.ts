@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { HealthResponseSchema, StatsResponseSchema } from '@claude-plugin-kit/shared'
 import { HealthService } from '../services/HealthService.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
+import { isReady } from '../lib/state.js'
 
 const ProcessingStatusSchema = z.object({
   pending: z.number(),
@@ -67,6 +68,27 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
         sessionIds,
         isProcessing: counts.pending > 0 || counts.processing > 0,
       })
+    },
+  )
+
+  // Readiness probe — 503 until DB + SessionManager fully initialised
+  router.get(
+    '/readiness',
+    {
+      schema: {
+        tags: ['Health'],
+        summary: 'Readiness probe — 503 until server is fully initialised',
+        response: {
+          200: z.object({ status: z.literal('ready') }),
+          503: z.object({ status: z.literal('starting') }),
+        },
+      },
+    },
+    async (_req, reply) => {
+      if (!isReady()) {
+        return reply.code(503).send({ status: 'starting' })
+      }
+      return reply.code(200).send({ status: 'ready' })
     },
   )
 }

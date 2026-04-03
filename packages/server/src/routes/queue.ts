@@ -18,7 +18,8 @@ export async function queueRoutes(app: FastifyInstance): Promise<void> {
       },
     },
     async (req, reply) => {
-      const items = queueRepo.listAll(req.query)
+      const { status, limit, sessionId } = req.query
+      const items = queueRepo.listAll({ status, limit, ...(sessionId !== undefined && { sessionId }) })
       const counts = queueRepo.countByStatus()
       return reply.code(200).send({
         items,

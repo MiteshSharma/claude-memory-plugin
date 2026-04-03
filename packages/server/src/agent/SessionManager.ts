@@ -2,6 +2,7 @@ import type { Db } from '../db/database.js'
 import { PendingMessageRepository } from '../repositories/PendingMessageRepository.js'
 import { SessionQueueProcessor } from './SessionQueueProcessor.js'
 import { AGENT_ENABLED } from '../config.js'
+import { logger } from '../lib/logger.js'
 
 const STALE_REAPER_INTERVAL_MS = 2 * 60 * 1000 // 2 minutes
 const STALE_SESSION_THRESHOLD_MS = 6 * 60 * 60 * 1000 // 6 hours
@@ -23,7 +24,7 @@ export class SessionManager {
 
   async start(): Promise<void> {
     if (!AGENT_ENABLED) {
-      console.log('[session-manager] agent disabled (PLUGIN_AGENT_DISABLED=1)')
+      logger.info('agent disabled (PLUGIN_AGENT_DISABLED=1)')
       return
     }
 
@@ -34,12 +35,12 @@ export class SessionManager {
     }
 
     if (pendingSessions.length > 0) {
-      console.log(`[session-manager] recovered ${pendingSessions.length} sessions with pending work`)
+      logger.info({ count: pendingSessions.length }, 'recovered sessions with pending work')
     }
 
     // Start stale reaper
     this.reaperInterval = setInterval(() => this.reapStaleSessions(), STALE_REAPER_INTERVAL_MS)
-    console.log('[session-manager] started')
+    logger.info('session-manager started')
   }
 
   enqueue(sessionId: string): void {
@@ -55,10 +56,10 @@ export class SessionManager {
 
     for (const [sessionId, session] of this.sessions) {
       session.processor.stop()
-      console.log(`[session-manager] stopped processor for session=${sessionId}`)
+      logger.info({ sessionId }, 'stopped processor')
     }
     this.sessions.clear()
-    console.log('[session-manager] stopped')
+    logger.info('session-manager stopped')
   }
 
   getStatus(): { activeSessions: number; sessionIds: string[] } {
@@ -96,7 +97,7 @@ export class SessionManager {
     const now = Date.now()
     for (const [sessionId, session] of this.sessions) {
       if (now - session.lastActivity > STALE_SESSION_THRESHOLD_MS) {
-        console.log(`[session-manager] reaping stale session=${sessionId}`)
+        logger.info({ sessionId }, 'reaping stale session')
         session.processor.stop()
         this.sessions.delete(sessionId)
       }
