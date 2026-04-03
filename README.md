@@ -57,16 +57,6 @@ Your session
 
 ## Quick Start
 
-```bash
-# Install globally
-npm install -g memory-updater
-
-# Or one-liner
-curl -fsSL https://raw.githubusercontent.com/your-org/memory-updater/main/scripts/install.sh | bash
-```
-
-Then restart Claude Code. That's it.
-
 ### Manual Install (from source)
 
 ```bash
@@ -77,19 +67,6 @@ pnpm build:plugin
 node bin/cli.js install
 ```
 
----
-
-## CLI
-
-```bash
-memory-updater install    # Register hooks + MCP in ~/.claude/
-memory-updater uninstall  # Remove hooks, MCP, stop server
-memory-updater status     # Is the server running? Hooks registered?
-memory-updater doctor     # Full diagnostic
-memory-updater restart    # Restart the background server
-```
-
----
 
 ## What Gets Injected
 
