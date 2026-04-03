@@ -2,30 +2,60 @@
   "hooks": {
     "SessionStart": [
       {
-        "command": "node ./plugin/scripts/session-start.js",
-        "timeout": 10000
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/mitesh/Personal/claude-memory-plugin/plugin/scripts/session-start.js",
+            "timeout": 10000
+          }
+        ]
       },
       {
-        "command": "node ./plugin/scripts/user-message.js",
-        "timeout": 5000
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/mitesh/Personal/claude-memory-plugin/plugin/scripts/user-message.js",
+            "timeout": 5000
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
       {
-        "command": "node ./plugin/scripts/user-prompt-submit.js",
-        "timeout": 10000
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/mitesh/Personal/claude-memory-plugin/plugin/scripts/user-prompt-submit.js",
+            "timeout": 10000
+          }
+        ]
       }
     ],
     "PostToolUse": [
       {
-        "command": "node ./plugin/scripts/post-tool-use.js",
-        "timeout": 120000
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/mitesh/Personal/claude-memory-plugin/plugin/scripts/post-tool-use.js",
+            "timeout": 120000
+          }
+        ]
       }
     ],
     "Stop": [
       {
-        "command": "node ./plugin/scripts/stop.js",
-        "timeout": 60000
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node /Users/mitesh/Personal/claude-memory-plugin/plugin/scripts/stop.js",
+            "timeout": 60000
+          }
+        ]
       }
     ]
   }

@@ -1,11 +1,18 @@
 {
   "name": "claude-plugin-kit",
-  "private": true,
   "version": "0.1.0",
+  "description": "Persistent memory and context injection plugin for Claude Code",
   "type": "module",
+  "bin": {
+    "claude-plugin-kit": "./bin/cli.js"
+  },
+  "files": [
+    "bin/",
+    "plugin/",
+    "scripts/"
+  ],
   "engines": {
-    "node": ">=22",
-    "pnpm": ">=9"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "turbo run dev --parallel",
@@ -17,8 +24,11 @@
     "test": "turbo run test",
     "clean": "turbo run clean",
     "register": "node scripts/register-hooks.js",
-    "register:mcp": "node scripts/register-mcp.js"
+    "register:mcp": "node scripts/register-mcp.js",
+    "postinstall": "node scripts/install-plugin.js"
   },
+  "keywords": ["claude", "claude-code", "mcp", "memory", "context", "hooks"],
+  "license": "MIT",
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
