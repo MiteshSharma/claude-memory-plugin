@@ -5,12 +5,13 @@ import {
 } from 'antd'
 import {
   DeleteOutlined, InboxOutlined, ExperimentOutlined,
-  BulbOutlined, TrophyOutlined, FieldTimeOutlined,
+  BulbOutlined, TrophyOutlined, FieldTimeOutlined, PlusOutlined,
 } from '@ant-design/icons'
 import {
   useLearnings, useLearningStats, useArchiveLearning,
   useDeleteLearning, useDecayLearnings,
 } from '../hooks/useApi'
+import { CreateLearningModal } from './CreateLearningModal'
 import type { Learning } from '../api/client'
 
 const { Text, Title } = Typography
@@ -91,6 +92,7 @@ function LearningCard({ learning, onArchive, onDelete }: {
 export function LearningsView() {
   const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined)
   const [showArchived, setShowArchived] = useState(false)
+  const [createModalOpen, setCreateModalOpen] = useState(false)
 
   const { data, isLoading } = useLearnings({ category: categoryFilter, includeArchived: showArchived })
   const { data: stats } = useLearningStats()
@@ -137,6 +139,9 @@ export function LearningsView() {
       </Row>
 
       <Space style={{ marginBottom: 16 }} wrap>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalOpen(true)}>
+          Add Learning
+        </Button>
         <Select
           allowClear
           placeholder="All categories"
@@ -168,9 +173,8 @@ export function LearningsView() {
         <Empty
           description={
             <span>
-              No learnings yet. Learnings are extracted automatically after session summaries.
-              <br />
-              Use Claude Code for a few sessions and check back.
+              No learnings yet. Click <strong>Add Learning</strong> to create one manually,
+              or use Claude Code for a few sessions — learnings are extracted automatically from session summaries.
             </span>
           }
         />
@@ -206,6 +210,8 @@ export function LearningsView() {
           )
         })
       )}
+
+      <CreateLearningModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
     </div>
   )
 }

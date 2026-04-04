@@ -40,6 +40,8 @@ Start a Go project? Claude already knows you prefer table-driven tests, check fo
 
 Learnings are **permanent** — they persist forever, gaining confidence each time the same pattern is re-observed. Project-specific data expires (30-90 days), but your coding DNA stays.
 
+You're not limited to auto-extracted learnings — **add your own** from the dashboard. Click "Add Learning", describe the practice, pick a category, set a confidence score, and it gets injected into every relevant session. You can also **archive** learnings to stop injection without deleting, or **delete** them permanently. Full control over what Claude knows about how you work.
+
 ### Full-Text Search Over Your History
 Every activity, session summary, and prompt is indexed with SQLite FTS5. Ask the MCP tool to find what you worked on: `search("rate limiting implementation")` — and get back the exact session, files touched, and decisions made.
 

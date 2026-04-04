@@ -148,6 +148,14 @@ export class LearningRepository {
       .all()
   }
 
+  setConfidence(id: number, confidence: number): void {
+    this.db
+      .update(globalLearnings)
+      .set({ confidence })
+      .where(eq(globalLearnings.id, id))
+      .run()
+  }
+
   archive(id: number): void {
     this.db
       .update(globalLearnings)

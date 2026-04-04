@@ -122,6 +122,18 @@ export function useLearningStats() {
   })
 }
 
+export function useCreateLearning() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (data: { canonicalKey: string; category: string; pattern: string; topics: string[]; confidence: number }) =>
+      api.learnings.create(data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['learnings'] })
+      qc.invalidateQueries({ queryKey: ['learning-stats'] })
+    },
+  })
+}
+
 export function useArchiveLearning() {
   const qc = useQueryClient()
   return useMutation({

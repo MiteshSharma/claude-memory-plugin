@@ -370,6 +370,15 @@ export const LearningSchema = z.object({
 })
 export type Learning = z.infer<typeof LearningSchema>
 
+export const CreateLearningRequestSchema = z.object({
+  canonicalKey: z.string().min(3).max(40).describe('Stable dedup key (e.g. "go/table-driven-tests")'),
+  category: z.enum(['coding', 'tooling', 'architecture', 'debugging', 'review', 'workflow']),
+  pattern: z.string().min(5).describe('Human-readable description of the practice'),
+  topics: z.array(z.string().min(1)).min(1).max(5).describe('Topic tags for relevance matching'),
+  confidence: z.number().min(0).max(10).default(3.0).describe('Initial confidence score'),
+})
+export type CreateLearningRequest = z.infer<typeof CreateLearningRequestSchema>
+
 export const LearningQuerySchema = z.object({
   topic: z.string().optional().describe('Filter by topic tag'),
   category: z.enum(['coding', 'tooling', 'architecture', 'debugging', 'review', 'workflow']).optional(),

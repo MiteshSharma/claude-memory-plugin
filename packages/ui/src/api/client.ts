@@ -203,6 +203,14 @@ export interface QueueResponse {
   counts: { pending: number; processing: number; failed: number }
 }
 
+export interface CreateLearningRequest {
+  canonicalKey: string
+  category: string
+  pattern: string
+  topics: string[]
+  confidence: number
+}
+
 export interface Learning {
   id: number
   canonicalKey: string
@@ -343,6 +351,7 @@ export const api = {
       if (opts?.includeArchived) params.set('includeArchived', 'true')
       return get<{ learnings: Learning[]; total: number }>(`/learnings?${params}`)
     },
+    create: (data: CreateLearningRequest) => post<Learning>('/learnings', data),
     stats: () => get<LearningStats>('/learnings/stats'),
     archive: (id: number) => post<{ archived: boolean }>(`/learnings/${id}/archive`),
     delete: (id: number) => del<{ deleted: boolean }>(`/learnings/${id}`),

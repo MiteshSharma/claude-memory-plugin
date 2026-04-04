@@ -5,6 +5,8 @@ import {
   LearningQuerySchema,
   LearningsResponseSchema,
   LearningStatsSchema,
+  LearningSchema,
+  CreateLearningRequestSchema,
 } from '@memory-updater/shared'
 import { LearningRepository } from '../repositories/LearningRepository.js'
 
@@ -61,6 +63,55 @@ export async function learningRoutes(app: FastifyInstance): Promise<void> {
           archived: l.archived === 1,
         })),
         total,
+      })
+    },
+  )
+
+  // POST /api/learnings — create a manual learning
+  router.post(
+    '/',
+    {
+      schema: {
+        tags: ['Learnings'],
+        summary: 'Create a new global learning manually',
+        body: CreateLearningRequestSchema,
+        response: { 201: LearningSchema },
+      },
+    },
+    async (req, reply) => {
+      const body = req.body as z.infer<typeof CreateLearningRequestSchema>
+      const key = body.canonicalKey.toLowerCase().replace(/[^a-z0-9/-]/g, '-').slice(0, 40)
+
+      // Check for duplicate canonical key
+      const existing = learningRepo.findByKey(key)
+      if (existing) {
+        return reply.code(409).send({ error: `Learning with key "${key}" already exists`, code: 'DUPLICATE_KEY' } as never)
+      }
+
+      const row = learningRepo.store({
+        canonicalKey: key,
+        category: body.category,
+        pattern: body.pattern,
+        topics: body.topics,
+      })
+
+      // Set custom confidence if provided (default store creates with 1.0)
+      if (body.confidence && body.confidence !== 1.0) {
+        learningRepo.setConfidence(row.id, body.confidence)
+      }
+
+      const created = learningRepo.findByKey(key)!
+      return reply.code(201).send({
+        id: created.id,
+        canonicalKey: created.canonicalKey,
+        category: created.category as 'coding' | 'tooling' | 'architecture' | 'debugging' | 'review' | 'workflow',
+        pattern: created.pattern,
+        confidence: created.confidence,
+        evidenceCount: created.evidenceCount,
+        topics: JSON.parse(created.topics),
+        firstSeenAt: created.firstSeenAt,
+        lastSeenAt: created.lastSeenAt,
+        archived: created.archived === 1,
       })
     },
   )
