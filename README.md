@@ -53,6 +53,18 @@ The context injected at session start is worth more than it costs. Memory Update
 
 ---
 
+## How It Compares to CLAUDE.md and Auto Memory
+
+While CLAUDE.md and auto memory solve part of the problem, they have fundamental limitations that Memory Updater addresses. **CLAUDE.md is static** — it's a manually written file that drifts from reality as the codebase evolves; nobody updates it after every refactor, so Claude follows stale instructions. Auto memory is better since Claude writes it itself, but it's a **black box** — you can't see what it learned, can't search across sessions, can't measure confidence, and can't curate at scale.
+
+Memory Updater gives you **full transparency**: every learning is visible in the dashboard with its confidence score, evidence count, canonical key, and the sessions it was extracted from — you can archive bad learnings, see which patterns are gaining confidence, and filter by category or topic. Beyond visibility, Memory Updater captures **everything** (every tool call, every session narrative), not just what Claude decides is worth remembering — so you get a complete searchable history.
+
+The **cross-project intelligence with confidence scoring** is something neither CLAUDE.md nor auto memory offers: a pattern observed once has confidence 1.0 and won't be injected, but after being seen across 5 projects it reaches 4.0+ and becomes part of your coding DNA. And the **knowledge funnel** (raw events → activities → summaries → permanent learnings) with automatic retention ensures the database stays lean while no insight is ever lost — something auto memory's flat markdown files can't structurally guarantee.
+
+In short: **CLAUDE.md is your static rulebook, auto memory is Claude's personal notepad, and Memory Updater is the structured, transparent, cross-project intelligence layer that sits above both.**
+
+---
+
 ## How It Works
 
 ```
