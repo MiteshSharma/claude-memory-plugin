@@ -6,6 +6,22 @@ async function get<T>(path: string): Promise<T> {
   return res.json() as Promise<T>
 }
 
+async function post<T>(path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'POST',
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined,
+  })
+  if (!res.ok) throw new Error(`POST ${path} failed: ${res.status}`)
+  return res.json() as Promise<T>
+}
+
+async function del<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`)
+  return res.json() as Promise<T>
+}
+
 // Types matching server responses
 export interface SessionSummary {
   id: number
@@ -187,6 +203,55 @@ export interface QueueResponse {
   counts: { pending: number; processing: number; failed: number }
 }
 
+export interface Learning {
+  id: number
+  canonicalKey: string
+  category: string
+  pattern: string
+  confidence: number
+  evidenceCount: number
+  topics: string[]
+  firstSeenAt: number
+  lastSeenAt: number
+  archived: boolean
+}
+
+export interface LearningStats {
+  total: number
+  byCategory: Record<string, number>
+  avgConfidence: number
+}
+
+export interface RetentionTableStats {
+  name: string
+  rowCount: number
+  ttlDays: number | null
+}
+
+export interface RetentionStats {
+  tables: RetentionTableStats[]
+  dbSizeBytes: number
+  lastCleanupAt: string | null
+  nextCleanupAt: string | null
+}
+
+export interface RetentionConfig {
+  rawEventsDays: number
+  pendingMessagesDays: number
+  activitiesDays: number
+  promptsDays: number
+  sessionsDays: number
+  summariesDays: number
+  cleanupIntervalHours: number
+  learningDecayMonths: number
+}
+
+export interface CleanupReport {
+  startedAt: string
+  completedAt: string
+  deletions: Record<string, number>
+}
+
 export const api = {
   health: () => get<Health>('/health'),
   stats: () => get<Stats>('/stats'),
@@ -269,4 +334,24 @@ export const api = {
   },
 
   projects: () => get<{ projects: string[] }>('/projects'),
+
+  learnings: {
+    list: (opts?: { topic?: string; category?: string; limit?: number; includeArchived?: boolean }) => {
+      const params = new URLSearchParams({ limit: String(opts?.limit ?? 50) })
+      if (opts?.topic) params.set('topic', opts.topic)
+      if (opts?.category) params.set('category', opts.category)
+      if (opts?.includeArchived) params.set('includeArchived', 'true')
+      return get<{ learnings: Learning[]; total: number }>(`/learnings?${params}`)
+    },
+    stats: () => get<LearningStats>('/learnings/stats'),
+    archive: (id: number) => post<{ archived: boolean }>(`/learnings/${id}/archive`),
+    delete: (id: number) => del<{ deleted: boolean }>(`/learnings/${id}`),
+    decay: () => post<{ decayed: number }>('/learnings/decay'),
+  },
+
+  retention: {
+    stats: () => get<RetentionStats>('/admin/retention'),
+    config: () => get<RetentionConfig>('/admin/retention/config'),
+    cleanup: () => post<CleanupReport>('/admin/retention/cleanup'),
+  },
 }

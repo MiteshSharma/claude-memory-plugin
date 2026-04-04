@@ -1,5 +1,5 @@
 import { createHash } from 'crypto'
-import { eq, and, gt, desc, count, asc, sql } from 'drizzle-orm'
+import { eq, and, gt, lt, desc, count, asc, sql } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
 import {
   activities,
@@ -174,5 +174,27 @@ export class ActivityRepository {
       .from(activities)
       .get()
     return result?.value ?? 0
+  }
+
+  /** Delete raw events older than N days. Returns count deleted. */
+  deleteRawEventsOlderThan(days: number): number {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+    const result = this.db
+      .delete(rawEvents)
+      .where(lt(rawEvents.createdAt, cutoff))
+      .returning({ id: rawEvents.id })
+      .all()
+    return result.length
+  }
+
+  /** Delete activities older than N days. Returns count deleted. */
+  deleteOlderThan(days: number): number {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+    const result = this.db
+      .delete(activities)
+      .where(lt(activities.createdAt, cutoff))
+      .returning({ id: activities.id })
+      .all()
+    return result.length
   }
 }

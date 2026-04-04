@@ -60,6 +60,53 @@ server.registerTool(
   },
 )
 
+// ─── Tool: get_learnings ──────────────────────────────────────────────────────
+server.registerTool(
+  'get_learnings',
+  {
+    description: 'Get coding practices and patterns observed across all projects',
+    inputSchema: {
+      topic: z.string().optional().describe('Filter by topic (e.g., "go", "testing", "react")'),
+      category: z.enum(['coding', 'tooling', 'architecture', 'debugging', 'review', 'workflow']).optional(),
+      limit: z.number().optional().default(10).describe('Max results (1-50)'),
+    },
+  },
+  async ({ topic, category, limit }) => {
+    console.error(`[mcp] get_learnings: topic="${topic ?? ''}" category="${category ?? ''}"`)
+
+    try {
+      const params = new URLSearchParams({ limit: String(limit ?? 10) })
+      if (topic) params.set('topic', topic)
+      if (category) params.set('category', category)
+
+      const res = await fetch(`${WORKER_URL}/api/learnings?${params.toString()}`, {
+        signal: AbortSignal.timeout(10_000),
+      })
+
+      if (!res.ok) {
+        return { content: [{ type: 'text' as const, text: 'Learnings service unavailable.' }] }
+      }
+
+      const data = (await res.json()) as { learnings?: unknown[] }
+      const learnings = data.learnings ?? []
+
+      return {
+        content: [
+          {
+            type: 'text' as const,
+            text:
+              learnings.length > 0
+                ? JSON.stringify(learnings, null, 2)
+                : 'No learnings found.' + (topic ? ` Try a different topic than "${topic}".` : ''),
+          },
+        ],
+      }
+    } catch {
+      return { content: [{ type: 'text' as const, text: 'Learnings service unavailable.' }] }
+    }
+  },
+)
+
 // Start the MCP server on stdio
 async function main(): Promise<void> {
   const transport = new StdioServerTransport()

@@ -145,6 +145,21 @@ export class SessionRepository {
       .all()
   }
 
+  /** Delete completed/failed sessions older than N days. Returns count deleted. */
+  deleteOlderThan(days: number): number {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+    // createdAt is TEXT (ISO 8601) — compare as string
+    const result = this.db
+      .delete(sessions)
+      .where(and(
+        or(eq(sessions.status, 'completed'), eq(sessions.status, 'failed')),
+        lt(sessions.createdAt, new Date(cutoff).toISOString()),
+      ))
+      .returning({ id: sessions.id })
+      .all()
+    return result.length
+  }
+
   touchLastActivity(id: number): void {
     this.db
       .update(sessions)

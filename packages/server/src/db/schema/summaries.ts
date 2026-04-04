@@ -13,6 +13,7 @@ export const sessionSummaries = sqliteTable('session_summaries', {
   pendingWork:  text('pending_work').notNull().default(''),
   notes:        text('notes').notNull().default(''),
   tokensUsed:   integer('tokens_used').notNull().default(0),
+  processedForLearnings: integer('processed_for_learnings').notNull().default(0),
   createdAt:    integer('created_at').notNull().$defaultFn(() => Date.now()),
 }, (t) => [
   index('sum_session_idx').on(t.sessionId),

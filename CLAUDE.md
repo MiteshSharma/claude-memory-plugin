@@ -36,7 +36,7 @@ pnpm build:plugin
 packages/shared/     ← Zod v3 schemas (single source of truth for all contracts)
 packages/server/     ← Fastify server: routes → services → repositories
 packages/hooks/      ← 5 Claude Code hook scripts (SessionStart, UserPromptSubmit, PostToolUse, Stop, UserMessage)
-packages/mcp/        ← MCP server: search, get_activities, timeline tools
+packages/mcp/        ← MCP server: search, get_learnings tools
 plugin/              ← Built distributable output
   scripts/           ← server.cjs, mcp-server.cjs, hook .js files
   hooks/hooks.json   ← Claude Code hook registrations
@@ -50,28 +50,19 @@ scripts/             ← Build + install scripts
 2. **Thin controllers** — routes only: declare schema + call service + set status code
 3. **better-sqlite3** has native bindings; `npm rebuild better-sqlite3` after fresh install
 4. **Hooks always exit 0** — graceful degradation, never block Claude Code
-5. **Phase 1 stubs** — ContextService, ActivityService.search(), SummarizeService return empty data
+5. **Canonical key dedup** — global learnings use LLM-generated canonical keys for deterministic deduplication
+6. **Knowledge funnel** — summaries are promoted to global learnings before retention deletion
 
 ## API
 
 Server runs at `http://127.0.0.1:37799`. Full interactive docs at `/docs`.
 
-Key Phase 1 endpoints:
+Key endpoints:
 - `GET  /api/health`            — liveness probe
 - `POST /api/sessions/init`     — called by UserPromptSubmit hook
 - `POST /api/activities`         — called by PostToolUse hook
-- `GET  /api/context/inject`    — called by SessionStart hook
+- `GET  /api/context/inject`    — called by SessionStart hook (includes learnings)
 - `POST /api/sessions/complete` — called by Stop hook
-- `GET  /api/stream`            — SSE for React viewer (Phase 6)
-
-## Phases
-
-1. ✅ Basic Framework (current)
-2. Data Layer — Drizzle ORM, complete schema
-3. AI Observer Agent — Claude Agent SDK, async queue
-4. Context System — session summaries, memory injection
-5. Search — SQLite FTS5 + Chroma vector
-6. React Viewer UI
-7. Production Hardening
-8. Testing
-9. Distribution
+- `GET  /api/learnings`         — list global learnings
+- `GET  /api/admin/retention`   — retention stats per table
+- `GET  /api/stream`            — SSE for React viewer

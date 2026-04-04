@@ -1,4 +1,4 @@
-import { eq, desc, count, asc, and } from 'drizzle-orm'
+import { eq, desc, count, asc, and, lt } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
 import { userPrompts, type PromptRow } from '../db/schema/index.js'
 
@@ -93,5 +93,16 @@ export class PromptRepository {
       .where(eq(userPrompts.sessionDbId, sessionDbId))
       .get()
     return result?.value ?? 0
+  }
+
+  /** Delete prompts older than N days. Returns count deleted. */
+  deleteOlderThan(days: number): number {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+    const result = this.db
+      .delete(userPrompts)
+      .where(lt(userPrompts.createdAt, cutoff))
+      .returning({ id: userPrompts.id })
+      .all()
+    return result.length
   }
 }

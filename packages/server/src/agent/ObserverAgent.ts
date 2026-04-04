@@ -2,6 +2,7 @@ import { execFile } from 'child_process'
 import { AGENT_MODEL, CLAUDE_CLI_PATH } from '../config.js'
 import { OBSERVER_SYSTEM_PROMPT } from './prompts/observer-system.js'
 import { SUMMARIZER_SYSTEM_PROMPT } from './prompts/summarizer-system.js'
+import { LEARNING_EXTRACTOR_SYSTEM_PROMPT } from './prompts/learning-extractor-system.js'
 
 export interface ExtractedActivity {
   type: string
@@ -12,6 +13,13 @@ export interface ExtractedActivity {
   concepts: string[]
   files_read: string[]
   files_modified: string[]
+}
+
+export interface ExtractedLearning {
+  key: string
+  category: string
+  pattern: string
+  topics: string[]
 }
 
 export interface ExtractedSummary {
@@ -142,6 +150,36 @@ export class ObserverAgent {
       console.error('[agent] extractActivities failed:', err instanceof Error ? err.message : err)
       console.error('[agent] raw response was:', typeof err === 'object' ? '' : String(err))
       return { activities: [], tokensUsed: 0 }
+    }
+  }
+
+  async extractLearnings(
+    summaryJson: string,
+    activitiesJson: string,
+  ): Promise<{ learnings: ExtractedLearning[]; tokensUsed: number }> {
+    const userMessage = [
+      'Session summary:',
+      summaryJson,
+      '',
+      'Activities from this session:',
+      activitiesJson,
+    ].join('\n')
+
+    try {
+      const { text, tokensUsed } = await runClaude(LEARNING_EXTRACTOR_SYSTEM_PROMPT, userMessage)
+      const parsed = extractJson(text)
+      const learnings = Array.isArray(parsed) ? (parsed as ExtractedLearning[]) : []
+      // Validate and normalize canonical keys
+      const valid = learnings.filter(
+        (l) => l.key && l.category && l.pattern && l.topics?.length > 0,
+      ).map((l) => ({
+        ...l,
+        key: l.key.toLowerCase().replace(/[^a-z0-9/-]/g, '-').slice(0, 40),
+      }))
+      return { learnings: valid, tokensUsed }
+    } catch (err) {
+      console.error('[agent] extractLearnings failed:', err instanceof Error ? err.message : err)
+      return { learnings: [], tokensUsed: 0 }
     }
   }
 

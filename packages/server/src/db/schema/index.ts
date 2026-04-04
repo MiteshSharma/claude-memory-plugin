@@ -15,3 +15,6 @@ export type { PendingMessageRow, PendingMessageInsert } from './queue.js'
 
 export { rawEvents } from './rawEvents.js'
 export type { RawEventRow, RawEventInsert } from './rawEvents.js'
+
+export { globalLearnings } from './learnings.js'
+export type { LearningRow, LearningInsert } from './learnings.js'

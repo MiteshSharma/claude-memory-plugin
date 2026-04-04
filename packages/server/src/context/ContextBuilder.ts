@@ -2,8 +2,11 @@ import type { Db } from '../db/database.js'
 import { ActivityRepository } from '../repositories/ActivityRepository.js'
 import { SummaryRepository } from '../repositories/SummaryRepository.js'
 import { SessionRepository } from '../repositories/SessionRepository.js'
+import { LearningRepository } from '../repositories/LearningRepository.js'
+import { detectTechStack } from '../lib/techDetector.js'
 import type { ActivityRow } from '../db/schema/index.js'
 import type { SummaryRow } from '../db/schema/index.js'
+import type { LearningRow } from '../db/schema/index.js'
 
 export type ContextMode = 'minimal' | 'standard' | 'full'
 
@@ -28,20 +31,30 @@ export class ContextBuilder {
   private readonly activityRepo: ActivityRepository
   private readonly summaryRepo: SummaryRepository
   private readonly sessionRepo: SessionRepository
+  private readonly learningRepo: LearningRepository
 
   constructor(db: Db) {
     this.activityRepo = new ActivityRepository(db)
     this.summaryRepo = new SummaryRepository(db)
     this.sessionRepo = new SessionRepository(db)
+    this.learningRepo = new LearningRepository(db)
   }
 
-  build(project: string, mode: ContextMode = 'standard', debug = false): ContextResult {
+  build(project: string, mode: ContextMode = 'standard', debug = false, workDir?: string): ContextResult {
     const summaries = this.summaryRepo.findRecent(project, SUMMARY_LIMIT)
     const activityLimit = ACTIVITY_LIMITS[mode]
     const activities = activityLimit > 0
       ? this.activityRepo.findRecent(project, activityLimit)
       : []
     const sessionCount = this.sessionRepo.findAll(project, 1000).length
+
+    // Fetch relevant global learnings based on tech stack
+    const topics = workDir ? detectTechStack(workDir) : []
+    const learnings = topics.length > 0
+      ? this.learningRepo.findByTopics(topics, 15)
+      : this.learningRepo.findAll({ limit: 10 }).learnings
+    // Only inject learnings with sufficient confidence
+    const confidentLearnings = learnings.filter((l) => l.confidence >= 1.5)
 
     const totalTokensUsed = [
       ...activities.map((a) => a.tokensUsed),
@@ -52,6 +65,11 @@ export class ContextBuilder {
 
     // Header
     sections.push(this.renderHeader(project, activities.length, sessionCount))
+
+    // Global learnings (practices)
+    if (confidentLearnings.length > 0 && mode !== 'minimal') {
+      sections.push(this.renderLearnings(confidentLearnings))
+    }
 
     // Previously (session summaries)
     if (summaries.length > 0) {
@@ -95,6 +113,35 @@ export class ContextBuilder {
       tokensUsed: totalTokensUsed,
       readTokens: finalReadTokens,
     }
+  }
+
+  private renderLearnings(learnings: LearningRow[]): string {
+    const lines = ['### Your Practices', '> Patterns observed across your projects\n']
+
+    // Group by category
+    const byCategory = new Map<string, LearningRow[]>()
+    for (const l of learnings) {
+      const group = byCategory.get(l.category) ?? []
+      group.push(l)
+      byCategory.set(l.category, group)
+    }
+
+    // Cap at ~500 tokens (~1600 chars)
+    let charBudget = 1600
+    for (const [category, items] of byCategory) {
+      if (charBudget <= 0) break
+      const header = `**${category}**`
+      lines.push(header)
+      charBudget -= header.length
+      for (const item of items) {
+        if (charBudget <= 0) break
+        const line = `- ${item.pattern} (${item.confidence.toFixed(1)})`
+        lines.push(line)
+        charBudget -= line.length
+      }
+    }
+
+    return lines.join('\n')
   }
 
   private renderHeader(project: string, activityCount: number, sessionCount: number): string {

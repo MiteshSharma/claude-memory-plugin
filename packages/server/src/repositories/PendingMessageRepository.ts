@@ -130,6 +130,20 @@ export class PendingMessageRepository {
       .all()
   }
 
+  /** Delete processed/failed queue items older than N days. Returns count deleted. */
+  deleteOlderThan(days: number): number {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+    const result = this.db
+      .delete(pendingMessages)
+      .where(and(
+        inArray(pendingMessages.status, ['processed', 'failed']),
+        lt(pendingMessages.createdAt, cutoff),
+      ))
+      .returning({ id: pendingMessages.id })
+      .all()
+    return result.length
+  }
+
   countByStatus(): { pending: number; processing: number; failed: number } {
     const rows = this.db
       .select({

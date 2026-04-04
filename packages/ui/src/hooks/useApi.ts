@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 
 export function useHealth() {
@@ -101,5 +101,85 @@ export function useQueue(status = 'all') {
     queryKey: ['queue', status],
     queryFn: () => api.queue.list(status),
     refetchInterval: 3_000,
+  })
+}
+
+// ─── Learnings ───────────────────────────────────────────────────────────────
+
+export function useLearnings(opts?: { topic?: string; category?: string; includeArchived?: boolean }) {
+  return useQuery({
+    queryKey: ['learnings', opts?.topic, opts?.category, opts?.includeArchived],
+    queryFn: () => api.learnings.list({ ...opts, limit: 100 }),
+    refetchInterval: 30_000,
+  })
+}
+
+export function useLearningStats() {
+  return useQuery({
+    queryKey: ['learning-stats'],
+    queryFn: api.learnings.stats,
+    refetchInterval: 30_000,
+  })
+}
+
+export function useArchiveLearning() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.learnings.archive(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['learnings'] })
+      qc.invalidateQueries({ queryKey: ['learning-stats'] })
+    },
+  })
+}
+
+export function useDeleteLearning() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => api.learnings.delete(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['learnings'] })
+      qc.invalidateQueries({ queryKey: ['learning-stats'] })
+    },
+  })
+}
+
+export function useDecayLearnings() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.learnings.decay(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['learnings'] })
+      qc.invalidateQueries({ queryKey: ['learning-stats'] })
+    },
+  })
+}
+
+// ─── Retention ───────────────────────────────────────────────────────────────
+
+export function useRetentionStats() {
+  return useQuery({
+    queryKey: ['retention-stats'],
+    queryFn: api.retention.stats,
+    refetchInterval: 60_000,
+  })
+}
+
+export function useRetentionConfig() {
+  return useQuery({
+    queryKey: ['retention-config'],
+    queryFn: api.retention.config,
+  })
+}
+
+export function useTriggerCleanup() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.retention.cleanup(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['retention-stats'] })
+      qc.invalidateQueries({ queryKey: ['learnings'] })
+      qc.invalidateQueries({ queryKey: ['learning-stats'] })
+    },
   })
 }

@@ -21,11 +21,12 @@ export class ContextService {
     project?: string,
     mode: ContextMode = 'standard',
     debug = false,
+    workDir?: string,
   ): Promise<ContextResponse> {
     const projectName = project ?? 'unknown'
     console.log(`[context] inject requested for project=${projectName} mode=${mode}`)
 
-    const result = this.builder.build(projectName, mode, debug)
+    const result = this.builder.build(projectName, mode, debug, workDir)
 
     return {
       context: result.context,

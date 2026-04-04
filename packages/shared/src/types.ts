@@ -223,6 +223,7 @@ export const ContextQuerySchema = z.object({
   project: z.string().optional().describe('Project name to get context for'),
   mode: z.enum(['minimal', 'standard', 'full']).optional().default('standard').describe('Context mode'),
   debug: z.coerce.boolean().optional().default(false).describe('Add debug info to output'),
+  workDir: z.string().optional().describe('Working directory for tech stack detection'),
 })
 export type ContextQuery = z.infer<typeof ContextQuerySchema>
 
@@ -352,6 +353,65 @@ export const QueueResponseSchema = z.object({
   }),
 })
 export type QueueResponse = z.infer<typeof QueueResponseSchema>
+
+// ─── Learnings ───────────────────────────────────────────────────────────────
+
+export const LearningSchema = z.object({
+  id: z.number(),
+  canonicalKey: z.string().describe('Stable dedup key (e.g. "go/table-driven-tests")'),
+  category: z.enum(['coding', 'tooling', 'architecture', 'debugging', 'review', 'workflow']),
+  pattern: z.string().describe('Human-readable description of the practice'),
+  confidence: z.number().describe('Confidence score — increases on re-observation'),
+  evidenceCount: z.number().describe('Number of sessions that contributed'),
+  topics: z.array(z.string()).describe('Topic tags for relevance matching'),
+  firstSeenAt: z.number().describe('Timestamp of first observation'),
+  lastSeenAt: z.number().describe('Timestamp of most recent observation'),
+  archived: z.boolean().describe('Whether this learning has been archived'),
+})
+export type Learning = z.infer<typeof LearningSchema>
+
+export const LearningQuerySchema = z.object({
+  topic: z.string().optional().describe('Filter by topic tag'),
+  category: z.enum(['coding', 'tooling', 'architecture', 'debugging', 'review', 'workflow']).optional(),
+  limit: z.coerce.number().min(1).max(100).default(20),
+  offset: z.coerce.number().min(0).default(0),
+  includeArchived: z.coerce.boolean().default(false),
+})
+export type LearningQuery = z.infer<typeof LearningQuerySchema>
+
+export const LearningsResponseSchema = z.object({
+  learnings: z.array(LearningSchema),
+  total: z.number(),
+})
+export type LearningsResponse = z.infer<typeof LearningsResponseSchema>
+
+export const LearningStatsSchema = z.object({
+  total: z.number(),
+  byCategory: z.record(z.number()),
+  avgConfidence: z.number(),
+})
+export type LearningStats = z.infer<typeof LearningStatsSchema>
+
+// ─── Retention ───────────────────────────────────────────────────────────────
+
+export const RetentionStatsSchema = z.object({
+  tables: z.array(z.object({
+    name: z.string(),
+    rowCount: z.number(),
+    ttlDays: z.number().nullable(),
+  })),
+  dbSizeBytes: z.number(),
+  lastCleanupAt: z.string().nullable(),
+  nextCleanupAt: z.string().nullable(),
+})
+export type RetentionStats = z.infer<typeof RetentionStatsSchema>
+
+export const CleanupReportSchema = z.object({
+  startedAt: z.string(),
+  completedAt: z.string(),
+  deletions: z.record(z.number()),
+})
+export type CleanupReport = z.infer<typeof CleanupReportSchema>
 
 // ─── Hook Input (Claude Code stdin format) ────────────────────────────────────
 // Claude Code sends different fields per event type:

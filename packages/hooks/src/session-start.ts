@@ -25,7 +25,7 @@ async function main(): Promise<void> {
   }
 
   // 3. Fetch context to inject into this session
-  const res = await workerGet(`/api/context/inject?project=${encodeURIComponent(project)}`)
+  const res = await workerGet(`/api/context/inject?project=${encodeURIComponent(project)}&workDir=${encodeURIComponent(workDir)}`)
   if (!res?.ok) {
     process.exit(0)
   }

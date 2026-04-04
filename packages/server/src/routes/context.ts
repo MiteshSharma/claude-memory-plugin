@@ -28,6 +28,7 @@ export async function contextRoutes(app: FastifyInstance): Promise<void> {
         req.query.project,
         req.query.mode,
         req.query.debug,
+        req.query.workDir,
       )
       return reply.code(200).send(result)
     },

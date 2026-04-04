@@ -6,6 +6,7 @@ import { SummaryRepository } from '../repositories/SummaryRepository.js'
 import { PromptRepository } from '../repositories/PromptRepository.js'
 import { SessionRepository } from '../repositories/SessionRepository.js'
 import { ObserverAgent, type ExtractedActivity } from './ObserverAgent.js'
+import { LearningService } from '../services/LearningService.js'
 import { logger } from '../lib/logger.js'
 
 const IDLE_TIMEOUT_MS = 3 * 60 * 1000 // 3 minutes
@@ -17,6 +18,7 @@ export class SessionQueueProcessor {
   private readonly promptRepo: PromptRepository
   private readonly sessionRepo: SessionRepository
   private readonly agent: ObserverAgent
+  private readonly learningService: LearningService
   private readonly emitter = new EventEmitter()
   private running = false
   private idleTimer: ReturnType<typeof setTimeout> | null = null
@@ -31,6 +33,7 @@ export class SessionQueueProcessor {
     this.promptRepo = new PromptRepository(db)
     this.sessionRepo = new SessionRepository(db)
     this.agent = new ObserverAgent()
+    this.learningService = new LearningService(db)
   }
 
   notify(): void {
@@ -198,7 +201,7 @@ export class SessionQueueProcessor {
     const { summary, tokensUsed } = await this.agent.summarizeSession(activitiesJson, promptsJson)
 
     if (summary) {
-      this.summaryRepo.store({
+      const stored = this.summaryRepo.store({
         sessionDbId: session.id,
         sessionId: session.sessionId,
         project: session.project,
@@ -211,6 +214,13 @@ export class SessionQueueProcessor {
         tokensUsed,
       })
       logger.info({ sessionId: this.sessionId, tokensUsed }, 'session summarized')
+
+      // Extract global learnings from the summary (async, non-blocking)
+      try {
+        await this.learningService.extractFromSummary(stored.id, session.sessionId)
+      } catch (err) {
+        logger.error({ sessionId: this.sessionId, err: err instanceof Error ? err.message : err }, 'learning extraction failed (non-fatal)')
+      }
     }
 
     this.queueRepo.confirmProcessed(messageId)

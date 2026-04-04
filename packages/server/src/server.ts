@@ -5,6 +5,7 @@ import cors from '@fastify/cors'
 import fastifyStatic from '@fastify/static'
 import type { Db } from './db/database.js'
 import type { SessionManager } from './agent/SessionManager.js'
+import type { CleanupService } from './services/CleanupService.js'
 import { registerSwagger } from './plugins/swagger.js'
 import { registerRoutes } from './routes/index.js'
 import { LOG_LEVEL, IS_DEV } from './config.js'
@@ -14,12 +15,14 @@ declare module 'fastify' {
   interface FastifyInstance {
     db: Db
     sessionManager: SessionManager
+    cleanupService: CleanupService
   }
 }
 
 export async function createServer(
   db: Db,
   sessionManager: SessionManager,
+  cleanupService: CleanupService,
 ): Promise<FastifyInstance> {
   const app = Fastify({
     logger: IS_DEV
@@ -38,6 +41,7 @@ export async function createServer(
   // Expose db and session manager to all route handlers
   app.decorate('db', db)
   app.decorate('sessionManager', sessionManager)
+  app.decorate('cleanupService', cleanupService)
 
   await registerRoutes(app)
 

@@ -8,6 +8,8 @@ import { SessionTimeline } from './components/SessionTimeline'
 import { PatternsView } from './components/PatternsView'
 import { SearchResults } from './components/SearchResults'
 import { ContextPreview } from './components/ContextPreview'
+import { LearningsView } from './components/LearningsView'
+import { RetentionView } from './components/RetentionView'
 import {
   useSessions,
   useSearch,
@@ -198,6 +200,24 @@ export function App() {
       children: (
         <div style={{ padding: '16px 0' }}>
           <ContextPreview project={project} />
+        </div>
+      ),
+    },
+    {
+      key: 'learnings',
+      label: 'Learnings',
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <LearningsView />
+        </div>
+      ),
+    },
+    {
+      key: 'retention',
+      label: 'Retention',
+      children: (
+        <div style={{ padding: '16px 0' }}>
+          <RetentionView />
         </div>
       ),
     },

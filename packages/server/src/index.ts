@@ -1,6 +1,7 @@
 import { createServer } from './server.js'
 import { initDatabase } from './db/database.js'
 import { SessionManager } from './agent/SessionManager.js'
+import { CleanupService } from './services/CleanupService.js'
 import { PORT, DATA_DIR } from './config.js'
 import { setReady } from './lib/state.js'
 import { logger } from './lib/logger.js'
@@ -38,9 +39,12 @@ async function main(): Promise<void> {
   const sessionManager = new SessionManager(db)
   await sessionManager.start()
 
+  const cleanupService = new CleanupService(db, raw)
+  cleanupService.start()
+
   setReady()
 
-  const server = await createServer(db, sessionManager)
+  const server = await createServer(db, sessionManager, cleanupService)
 
   await server.listen({ port: PORT, host: '127.0.0.1' })
 
@@ -59,6 +63,7 @@ async function main(): Promise<void> {
     force.unref()
 
     try {
+      cleanupService.stop()
       sessionManager.stop()
       await server.close()
       raw.close()

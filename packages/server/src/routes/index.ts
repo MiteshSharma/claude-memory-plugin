@@ -11,6 +11,7 @@ import { rawEventRoutes } from './raw-events.js'
 import { queueRoutes } from './queue.js'
 import { promptRoutes } from './prompts.js'
 import { patternRoutes } from './patterns.js'
+import { learningRoutes } from './learnings.js'
 
 export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(healthRoutes, { prefix: '/api' })
@@ -25,4 +26,5 @@ export async function registerRoutes(app: FastifyInstance): Promise<void> {
   await app.register(queueRoutes, { prefix: '/api/queue' })
   await app.register(promptRoutes, { prefix: '/api/prompts' })
   await app.register(patternRoutes, { prefix: '/api/patterns' })
+  await app.register(learningRoutes, { prefix: '/api/learnings' })
 }

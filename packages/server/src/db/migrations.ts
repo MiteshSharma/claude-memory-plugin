@@ -177,6 +177,57 @@ const MIGRATIONS: Array<{ version: number; sql: string }> = [
       END;
     `,
   },
+  {
+    version: 4,
+    sql: `
+      -- Phase 10: Global learnings table
+      CREATE TABLE IF NOT EXISTS global_learnings (
+        id                INTEGER PRIMARY KEY AUTOINCREMENT,
+        canonical_key     TEXT NOT NULL UNIQUE,
+        category          TEXT NOT NULL CHECK(category IN ('coding','tooling','architecture','debugging','review','workflow')),
+        pattern           TEXT NOT NULL,
+        confidence        REAL NOT NULL DEFAULT 1.0,
+        evidence_count    INTEGER NOT NULL DEFAULT 1,
+        topics            TEXT NOT NULL DEFAULT '[]',
+        source_summary_ids TEXT NOT NULL DEFAULT '[]',
+        first_seen_at     INTEGER NOT NULL,
+        last_seen_at      INTEGER NOT NULL,
+        archived          INTEGER NOT NULL DEFAULT 0
+      );
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_learnings_key ON global_learnings(canonical_key);
+      CREATE INDEX IF NOT EXISTS idx_learnings_category ON global_learnings(category);
+      CREATE INDEX IF NOT EXISTS idx_learnings_confidence ON global_learnings(confidence DESC);
+      CREATE INDEX IF NOT EXISTS idx_learnings_last_seen ON global_learnings(last_seen_at);
+
+      -- FTS5 for learnings search
+      CREATE VIRTUAL TABLE IF NOT EXISTS learnings_fts USING fts5(
+        pattern, topics, canonical_key,
+        content='global_learnings', content_rowid='id'
+      );
+
+      CREATE TRIGGER IF NOT EXISTS learnings_fts_insert AFTER INSERT ON global_learnings BEGIN
+        INSERT INTO learnings_fts(rowid, pattern, topics, canonical_key)
+        VALUES (new.id, new.pattern, new.topics, new.canonical_key);
+      END;
+      CREATE TRIGGER IF NOT EXISTS learnings_fts_delete AFTER DELETE ON global_learnings BEGIN
+        INSERT INTO learnings_fts(learnings_fts, rowid, pattern, topics, canonical_key)
+        VALUES ('delete', old.id, old.pattern, old.topics, old.canonical_key);
+      END;
+      CREATE TRIGGER IF NOT EXISTS learnings_fts_update AFTER UPDATE ON global_learnings BEGIN
+        INSERT INTO learnings_fts(learnings_fts, rowid, pattern, topics, canonical_key)
+        VALUES ('delete', old.id, old.pattern, old.topics, old.canonical_key);
+        INSERT INTO learnings_fts(rowid, pattern, topics, canonical_key)
+        VALUES (new.id, new.pattern, new.topics, new.canonical_key);
+      END;
+    `,
+  },
+  {
+    version: 5,
+    sql: `
+      -- Phase 11: Retention policy support
+      ALTER TABLE session_summaries ADD COLUMN processed_for_learnings INTEGER NOT NULL DEFAULT 0;
+    `,
+  },
 ]
 
 export function runMigrations(db: RawDb): void {

@@ -1,4 +1,4 @@
-import { eq, desc, count, inArray } from 'drizzle-orm'
+import { eq, desc, count, inArray, lt, and } from 'drizzle-orm'
 import type { Db } from '../db/database.js'
 import { sessionSummaries, type SummaryRow, type SummaryInsert } from '../db/schema/index.js'
 
@@ -60,5 +60,37 @@ export class SummaryRepository {
       .from(sessionSummaries)
       .get()
     return result?.value ?? 0
+  }
+
+  /** Find summaries expiring within bufferDays that haven't been processed for learnings */
+  findExpiring(ttlDays: number, bufferDays: number): SummaryRow[] {
+    const cutoff = Date.now() - (ttlDays - bufferDays) * 24 * 60 * 60 * 1000
+    return this.db
+      .select()
+      .from(sessionSummaries)
+      .where(and(
+        lt(sessionSummaries.createdAt, cutoff),
+        eq(sessionSummaries.processedForLearnings, 0),
+      ))
+      .all()
+  }
+
+  markProcessedForLearnings(id: number): void {
+    this.db
+      .update(sessionSummaries)
+      .set({ processedForLearnings: 1 })
+      .where(eq(sessionSummaries.id, id))
+      .run()
+  }
+
+  /** Delete summaries older than N days. Returns count deleted. */
+  deleteOlderThan(days: number): number {
+    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000
+    const result = this.db
+      .delete(sessionSummaries)
+      .where(lt(sessionSummaries.createdAt, cutoff))
+      .returning({ id: sessionSummaries.id })
+      .all()
+    return result.length
   }
 }
