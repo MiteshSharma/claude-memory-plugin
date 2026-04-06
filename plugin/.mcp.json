@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "memory-updater": {
+      "command": "node",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/scripts/mcp-server.cjs"],
+      "env": {
+        "PLUGIN_PORT": "37799",
+        "PLUGIN_DATA_DIR": "${HOME}/.memory-updater"
+      }
+    }
+  }
+}

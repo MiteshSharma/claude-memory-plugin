@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/session-start.js\" 2>/dev/null",
+        "timeout": 10000
+      },
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/user-message.js\" 2>/dev/null",
+        "timeout": 5000
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/user-prompt-submit.js\" 2>/dev/null",
+        "timeout": 10000
+      }
+    ],
+    "PostToolUse": [
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool-use.js\" 2>/dev/null",
+        "timeout": 120000
+      }
+    ],
+    "Stop": [
+      {
+        "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/stop.js\" 2>/dev/null",
+        "timeout": 60000
+      }
+    ]
+  }
+}

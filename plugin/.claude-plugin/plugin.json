@@ -1,0 +1,11 @@
+{
+  "name": "memory-updater",
+  "displayName": "Claude Plugin Kit",
+  "version": "0.1.0",
+  "description": "Persistent memory and context injection for Claude Code",
+  "author": "your-name",
+  "license": "MIT",
+  "main": "scripts/server.cjs",
+  "hooks": "hooks/hooks.json",
+  "mcp": ".mcp.json"
+}
